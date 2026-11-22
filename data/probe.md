@@ -1,6 +1,6 @@
 # Kết quả gọi thử nguồn số liệu
 
-Chạy lúc 2026-11-22T09:27:34Z trên Linux trong 29 giây; thành công 98/109 probe. Chi tiết đầy đủ trong `probe.json`.
+Chạy lúc 2026-11-22T09:50:57Z trên Linux trong 70 giây; thành công 98/109 probe. Chi tiết đầy đủ trong `probe.json`.
 
 | id | chuỗi | nguồn | kết quả | HTTP | từ | đến | n | tần suất | cũ (ngày) | ghi chú |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -63,7 +63,7 @@ Chạy lúc 2026-11-22T09:27:34Z trên Linux trong 29 giây; thành công 98/109
 | px.gold_lbma_pm | Vàng LBMA PM (USD) | LBMA | LỖI | 403 |  |  |  |  |  | LBMA không trả JSON |
 | px.gold_fawaz | Vàng (XAU) mới nhất | fawazahmed0 currency-api | OK | 200 |  | 2026-11-21 |  |  |  | 1 USD đổi ra ounce vàng |
 | px.gold_fawaz_2024 | Vàng (XAU) ngày 2024-03-06 | fawazahmed0 currency-api | OK | 200 |  | 2024-03-06 |  |  |  | 1 USD đổi ra ounce vàng |
-| px.usdvnd_vcb | USD/VND Vietcombank | Vietcombank XML | OK | 200 |  | 11/22/2026 4:26:19 PM |  |  |  | chỉ có tỷ giá hiện tại |
+| px.usdvnd_vcb | USD/VND Vietcombank | Vietcombank XML | OK | 200 |  | 11/22/2026 4:39:53 PM |  |  |  | chỉ có tỷ giá hiện tại |
 | px.usdvnd_erapi | USD/VND | open.er-api.com | OK | 200 |  | Sun, 22 Nov 2026 00:02:32 +0000 |  |  |  | chỉ có tỷ giá mới nhất |
 | px.usdvnd_fawaz | USD/VND mới nhất | fawazahmed0 currency-api | OK | 200 |  | 2026-11-21 |  |  |  | 1 USD đổi ra VND |
 | px.usdvnd_fawaz_2024 | USD/VND ngày 2024-03-06 | fawazahmed0 currency-api | OK | 200 |  | 2024-03-06 |  |  |  | 1 USD đổi ra VND |
