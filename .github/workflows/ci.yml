@@ -1,6 +1,6 @@
 name: ci
 # Kiểm thử engine và runner, kiểm web/ khớp mã nguồn, đóng gói trang (index.html + app.js + app.css < 300 KB),
-# chạy E2E bằng Chrome ở 390 px và 1280 px.
+# chạy E2E bằng Chrome ở 360 px và 1280 px.
 
 on:
   push:

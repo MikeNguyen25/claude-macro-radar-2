@@ -1,4 +1,4 @@
-// Kiểm thử đầu-cuối: phục vụ dist/ bằng máy chủ tĩnh, mở bằng Chrome ở 390 px và 1280 px, đi qua 8 trang,
+// Kiểm thử đầu-cuối: phục vụ dist/ bằng máy chủ tĩnh, mở bằng Chrome ở 360 px và 1280 px, đi qua 8 trang,
 // bắt lỗi console, kiểm CSS đã áp dụng, biểu đồ, hash sổ dự báo, và trang không cuộn ngang.
 // Chạy hai dạng trang: nguyên bản, và dạng bị công cụ đăng của phiên tự động bọc trong khung riêng.
 //   node tests/e2e/ui.e2e.mjs [--shots test-results]
@@ -34,7 +34,7 @@ const fail = (msg) => { failures.push(msg); console.error(`✗ ${msg}`); };
 
 const browser = await chromium.launch({ executablePath: CHROME, headless: true, args: ['--no-sandbox'] });
 try {
-  for (const vp of [{ width: 390, height: 844, wrap: false }, { width: 1280, height: 900, wrap: false }, { width: 390, height: 844, wrap: true }]) {
+  for (const vp of [{ width: 360, height: 780, wrap: false }, { width: 1280, height: 900, wrap: false }, { width: 360, height: 780, wrap: true }]) {
     const tag = `${vp.width}px${vp.wrap ? ' (trang bị bọc)' : ''}`;
     const ctx = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, locale: 'vi-VN' });
     await ctx.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());

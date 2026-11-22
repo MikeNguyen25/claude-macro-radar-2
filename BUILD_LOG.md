@@ -158,3 +158,7 @@ Kế hoạch ở `docs/PLAN.md` (bản sao trong Project). Mike cho chạy tiế
 - `mrc ai` in sẵn map file đăng (đường dẫn tuyệt đối) và `db_writes.json` cho ArtifactData (mỗi doc gửi bằng `file_path`), nên số
   liệu không đi qua ngữ cảnh; M6 tới hạn được chấm từ file đã đăng sau khi kiểm hash.
 - Runbook và prompt tác vụ 07:40 đổi theo các công cụ trên; dự báo hôm nay chưa có thì tác vụ tự chạy job `prices-daily`.
+- Tự kiểm 3 (phiên tự động, 22:25): đọc trang, tải file đã đăng, chạy `mrc ai --prev`, đăng giao diện, ghi DB hai lần (lần hai
+  có if_version) đều được. Phát hiện: công cụ Artifact bọc trang trong khung riêng khi đăng, làm CSS mất sau khi trang vẽ lại
+  `<body>` (trang mất định dạng khoảng 22:30–22:35). Đã sửa trong `main.js`; E2E chạy thêm dạng trang bị bọc và kiểm CSS đã áp
+  dụng; viewport điện thoại trong E2E hạ xuống 360 px.
