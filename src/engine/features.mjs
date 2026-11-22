@@ -1,6 +1,6 @@
 // Đặc trưng tại ngày D (chỉ dùng số đã có tới D) và kết quả sau H ngày.
 
-import { bisectRight } from './util.mjs';
+import { bisectRight, monthEndDay } from './util.mjs';
 import { compositeAt, zAt } from './data.mjs';
 
 /** Số quan sát tối thiểu trước D để tính đặc trưng giá. */
@@ -57,9 +57,11 @@ export function assetFeatures(A, day) {
     if (j < 0 || j >= i) return 0;
     return chg(j) / (sObs * Math.sqrt(Math.max(i - j, 1)));
   };
-  // giá so với trung bình 10 điểm cuối tháng gần nhất (không tính tháng hiện tại nếu chưa hết)
+  // giá so với trung bình 10 điểm cuối tháng gần nhất đã khép (tháng hiện tại chưa hết thì không tính,
+  // kể cả khi số liệu dừng giữa tháng: như vậy kết quả không phụ thuộc số liệu sau ngày D)
   const me = A.meIdx;
-  const k = bisectRight(me, i) - 1;
+  let k = bisectRight(me, i) - 1;
+  while (k >= 0 && monthEndDay(A.days[me[k]]) > day) k--;
   let dsma = 0;
   if (k >= 9) {
     let s = 0;

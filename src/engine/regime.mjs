@@ -63,7 +63,7 @@ export function regimeReport(data, T, cache) {
   return {
     asOf: fromDay(T), regions,
     risk: { score: score === null ? null : round(score, 3), state,
-      label: state === 'off' ? 'Tắt rủi ro' : state === 'on' ? 'Bật rủi ro' : state === 'neutral' ? 'Trung tính' : 'Thiếu số liệu',
+      label: state === 'off' ? 'Né rủi ro' : state === 'on' ? 'Ưa rủi ro' : state === 'neutral' ? 'Trung tính' : 'Thiếu số liệu',
       parts: Object.fromEntries(Object.entries(now.risk).map(([k, v]) => [k, v === null ? null : round(v, 3)])) },
     macro: Object.fromEntries(Object.entries(now.macro).map(([k, v]) => [k, v === null ? null : round(v, 3)])),
     history,

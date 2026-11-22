@@ -316,10 +316,14 @@ export function evaluate(bt, cfg) {
     const recs = bt[h.id].recs.filter((r) => r.y !== undefined && r.ready);
     const months = [...new Set(recs.map((r) => r.m))].sort((a, b) => a - b);
     const testMonths = new Set(months.slice(-cfg.testMonths));
-    const halfAt = Math.floor(months.length / 2);
-    const halves = [new Set(months.slice(0, halfAt)), new Set(months.slice(halfAt))];
+    const split = (ms) => { const k = Math.floor(ms.length / 2); return [new Set(ms.slice(0, k)), new Set(ms.slice(k))]; };
+    const halves = split(months);
     const groups = {};
-    for (const g of [...new Set(recs.map((r) => r.g))]) groups[g] = scoreScope(recs.filter((r) => r.g === g), h.months, cfg, testMonths, halves);
+    // Hai nửa tính theo giai đoạn của chính nhóm (crypto có số liệu muộn hơn nhóm khác).
+    for (const g of [...new Set(recs.map((r) => r.g))]) {
+      const rg = recs.filter((r) => r.g === g);
+      groups[g] = scoreScope(rg, h.months, cfg, testMonths, split([...new Set(rg.map((r) => r.m))].sort((a, b) => a - b)));
+    }
     const all = scoreScope(recs, h.months, cfg, testMonths, halves);
     const ic = {};
     for (const M of CANDIDATES.concat('M1')) {

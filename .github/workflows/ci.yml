@@ -1,0 +1,41 @@
+name: ci
+# Kiểm thử engine và runner, đóng gói trang (index.html < 300 KB), chạy E2E bằng Chrome ở 390 px và 1280 px.
+
+on:
+  push:
+    branches: [main]
+    paths: ["src/**", "tools/**", "tests/**", "build.mjs", "package.json", "package-lock.json", ".github/workflows/ci.yml"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Kiểm thử
+        run: npm test
+      - name: Đóng gói và dựng bản xem thử từ số liệu hiện có
+        run: |
+          today=$(node -e "console.log(new Date(Date.now()+7*3600e3).toISOString().slice(0,10))")
+          node tools/mrc.mjs daily --data data --state /tmp/ci-state --site /tmp/ci-site --today "$today" --weekly no --monthly no > /tmp/daily.json
+          node build.mjs --preview /tmp/ci-site --state /tmp/ci-state
+      - name: E2E
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: node tests/e2e/ui.e2e.mjs --shots test-results
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-screenshots
+          path: test-results
+          retention-days: 7

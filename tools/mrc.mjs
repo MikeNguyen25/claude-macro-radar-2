@@ -1,41 +1,38 @@
 #!/usr/bin/env node
-// Runner của tác vụ định kỳ macro-radar 2. Tính toán nằm hết ở đây; Claude chỉ đọc/ghi DB,
-// đăng file lên artifact, viết nhận định AI và gửi tin nhắn.
+// Runner của macro-radar 2.
 //
-//   node tools/mrc.mjs fetch    --out data [--ref main]
-//   node tools/mrc.mjs plan     --dump dump --today D
-//   node tools/mrc.mjs run      --data data --dump dump --today D --out out [--optimize] [--experiments] [--monthly]
-//   node tools/mrc.mjs finalize --out out [--ai analysis.json]
-//   node tools/mrc.mjs manual   --dump dump --id vn_cpi --period 2026-10 --value 5.09 --src1 "Tên|url" [--src2 "Tên|url"] --out out
-//   node tools/mrc.mjs rollback --dump dump --to 2.0.1 --out out
+// Phần tất định chạy trên GitHub Actions, trạng thái nằm trong repo (state/), lịch sử git là nhật ký
+// bất biến có dấu thời gian:
+//   node tools/mrc.mjs daily    --data data --state state --site site [--today D] [--force] [--weekly] [--monthly]
+//   node tools/mrc.mjs rollback --state state --to 2.0.1
+//   node tools/mrc.mjs propose  --state state --title "..." --override '{"params":{"tDof":7}}' [--hypothesis "..."]
 //
-// Doc DB trong thư mục dump: mỗi doc một file <collection>__<id>.json dạng {"version": n, "data": {...}}.
+// Tác vụ 07:40 của Claude chỉ thêm lớp AI (M6), chấm M6, đăng file và ghi vài doc DB nhỏ:
+//   node tools/mrc.mjs status   --state state --site site [--manual dir]
+//   node tools/mrc.mjs ai       --data data --state state --site site --out out [--ai analysis.json]
+//                               [--due ai_due.json] [--aiscores scores_ai.json] [--manual dir] [--versions versions.json]
+//   node tools/mrc.mjs manual   --id vn_cpi --period 2026-10 --value 3,2 --src1 "Tên|url" [--src2 "Tên|url"] [--doc cur.json] --out out
+//   node tools/mrc.mjs raw      --data data --out out/files/data/raw.json
+//
+// Doc DB do tác vụ đọc lưu thành file JSON {"version": n, "data": {...}} hoặc chỉ phần data.
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { pathToFileURL } from 'node:url';
+import * as E from '../src/engine/index.mjs';
+import { validateAi, analysisDoc, verifyAnalysisDoc, aiBadge, AI_MAX_DEV } from '../src/engine/ai.mjs';
 
-const HERE = path.dirname(fileURLToPath(import.meta.url));
-const REPO = 'MikeNguyen25/claude-macro-radar-2';
-const INITIAL_VERSION = '2.0.0-rc.1';
-const MAX_OPS_PER_WRITE = 25;      // số doc mỗi lệnh db_write (giới hạn 50, chừa an toàn về kích thước)
-const PENDING_KEEP_DAYS = 120;     // giữ danh sách ngày chờ chấm tối đa chừng này ngày
-const LEDGER_DATES_KEEP = 800;     // số ngày sổ dự báo giữ trong meta/status
+export { validateAi, analysisDoc, verifyAnalysisDoc, aiBadge };
 
-const E = await loadEngine();
-
-async function loadEngine() {
-  for (const rel of ['./engine.mjs', '../src/engine/index.mjs']) {
-    const f = path.join(HERE, rel);
-    if (fs.existsSync(f)) return import(pathToFileURL(f).href);
-  }
-  throw new Error('không tìm thấy engine (tools/engine.mjs hoặc src/engine/index.mjs)');
-}
+export const INITIAL_VERSION = '2.0.0';
+export const REPO = 'MikeNguyen25/claude-macro-radar-2';
+const PENDING_KEEP_DAYS = 120;   // bỏ ngày chờ chấm cũ hơn chừng này
+const LEDGER_LIST_KEEP = 400;    // số ngày sổ dự báo liệt kê trong status và bundle
+const HISTORY_OOS_MONTHS = 36;   // số tháng dự báo kiểm định gửi cho trang
 
 // ------------------------------------------------------------------ tiện ích
 
-function args(argv) {
+export function parseArgs(argv) {
   const out = { _: [] };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -53,33 +50,55 @@ function writeJson(f, v, pretty = false) {
   fs.mkdirSync(path.dirname(f), { recursive: true });
   fs.writeFileSync(f, JSON.stringify(v, null, pretty ? 1 : 0) + '\n');
 }
+const clone = (x) => (x === undefined || x === null ? x : structuredClone(x));
 const nowIso = () => new Date().toISOString().replace(/\.\d+Z$/, 'Z');
-const vnToday = () => new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
+/** Ngày hiện tại theo giờ Việt Nam (UTC+7). */
+export const vnToday = (ms = Date.now()) => new Date(ms + 7 * 3600e3).toISOString().slice(0, 10);
+/** Thứ trong tuần của ngày ISO: 0 = Chủ nhật. */
+export const weekday = (iso) => new Date(`${iso}T00:00:00Z`).getUTCDay();
+const r4 = (x) => (x === null || x === undefined || !Number.isFinite(x) ? null : Math.round(x * 1e4) / 1e4);
 
-function curl(url) {
-  return execFileSync('curl', ['-sfL', '--retry', '3', '--retry-delay', '3', '--max-time', '90', url], { maxBuffer: 256 * 1024 * 1024 }).toString('utf8');
+/** Doc DB đọc từ file: chấp nhận {"version", "data"} hoặc doc trần. */
+export function readDbFile(f) {
+  if (!f || f === true || !fs.existsSync(f)) return { version: null, data: null };
+  const v = readJson(f);
+  if (v && typeof v === 'object' && !Array.isArray(v) && 'data' in v && Object.keys(v).every((k) => ['data', 'version', 'exists', 'updatedAt'].includes(k))) {
+    return { version: v.version ?? null, data: v.data };
+  }
+  return { version: null, data: v };
 }
 
-/** Đọc thư mục dump: { 'collection/id': {version, data} }. */
-function loadDump(dir) {
+// ------------------------------------------------------------------ trạng thái trong repo
+
+/** Đọc state/<collection>/<id>.json thành { 'collection/id': doc }. */
+export function loadState(dir) {
   const out = {};
   if (!dir || !fs.existsSync(dir)) return out;
-  for (const f of fs.readdirSync(dir)) {
-    if (!f.endsWith('.json')) continue;
-    const key = f.slice(0, -5).replace('__', '/');
-    const v = readJson(path.join(dir, f));
-    out[key] = v && 'data' in v ? v : { version: undefined, data: v };
+  for (const col of fs.readdirSync(dir).sort()) {
+    const cdir = path.join(dir, col);
+    if (!fs.statSync(cdir).isDirectory()) continue;
+    for (const f of fs.readdirSync(cdir).sort()) if (f.endsWith('.json')) out[`${col}/${f.slice(0, -5)}`] = readJson(path.join(cdir, f));
   }
   return out;
 }
 
-/** Lệnh ghi doc: có version thì kèm ifVersion (doc đã tồn tại). */
-function setOp(dump, p, data) {
-  const cur = dump[p];
-  return cur && cur.version ? { op: 'set', path: p, ifVersion: cur.version, data } : { op: 'set', path: p, data };
+/** Ghi doc vào state/. Sổ dự báo chỉ thêm: không ghi đè doc forecasts/ đã có. */
+export function saveState(dir, docs) {
+  const written = [];
+  for (const [key, v] of Object.entries(docs)) {
+    const [col, id] = key.split('/');
+    const f = path.join(dir, col, `${id}.json`);
+    if (col === 'forecasts' && fs.existsSync(f)) {
+      if (readJson(f).hash !== v.hash) throw new Error(`không ghi đè ${key}: sổ dự báo chỉ thêm, không sửa`);
+      continue;
+    }
+    writeJson(f, v, true);
+    written.push(key);
+  }
+  return written;
 }
 
-/** Tăng version: 'patch' | 'minor'; bản rc thì tăng số rc. */
+/** Tăng version: 'patch' hoặc 'minor'; bản rc thì tăng số rc. */
 export function bumpVersion(v, kind) {
   const m = /^(\d+)\.(\d+)\.(\d+)(?:-rc\.(\d+))?$/.exec(v || INITIAL_VERSION);
   if (!m) return v;
@@ -88,553 +107,731 @@ export function bumpVersion(v, kind) {
   return kind === 'minor' ? `${maj}.${min + 1}.0` : `${maj}.${min}.${pat + 1}`;
 }
 
-const fmtPct = (x, d = 1) => (x === null || x === undefined || !Number.isFinite(x) ? '–' : `${(x * 100).toFixed(d).replace('.', ',')}%`);
-const fmtNum = (x, d = 2) => (x === null || x === undefined || !Number.isFinite(x) ? '–' : x.toLocaleString('vi-VN', { maximumFractionDigits: d, minimumFractionDigits: 0 }));
-const viDate = (iso) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
-
-// ------------------------------------------------------------------ chuỗi nhập tay (thông cáo Việt Nam)
-
-/** Chuỗi Việt Nam không có API: đọc thông cáo, 2 nguồn khớp thì dùng, 1 nguồn thì ghi rõ. */
-export const MANUAL_SERIES = [
-  { id: 'vn_cpi', name: 'CPI Việt Nam (% so cùng kỳ)', region: 'vn', factor: 'inflation', sign: 1, transform: 'level', unit: '%', freq: 'M', pubLagDays: 7, releaseDay: 7,
-    hint: 'Cục Thống kê (nso.gov.vn) công bố đầu tháng sau; lấy "CPI tháng X tăng ...% so với cùng kỳ năm trước".' },
-  { id: 'vn_core_cpi', name: 'Lạm phát cơ bản Việt Nam (% so cùng kỳ)', region: 'vn', factor: 'inflation', sign: 1, transform: 'level', unit: '%', freq: 'M', pubLagDays: 7, releaseDay: 7,
-    hint: 'Cùng thông cáo CPI của Cục Thống kê: "lạm phát cơ bản tháng X tăng ...% so với cùng kỳ".' },
-  { id: 'vn_pmi', name: 'PMI sản xuất Việt Nam (S&P Global)', region: 'vn', factor: 'growth', sign: 1, transform: 'level50', unit: 'chỉ số', freq: 'M', pubLagDays: 3, releaseDay: 3,
-    hint: 'S&P Global công bố ngày làm việc đầu tháng sau.' },
-  { id: 'vn_refi', name: 'Lãi suất tái cấp vốn NHNN', region: 'vn', factor: 'policy', sign: 1, transform: 'chg6', unit: '%', freq: 'M', pubLagDays: 1, releaseDay: 2,
-    hint: 'Ngân hàng Nhà nước (sbv.gov.vn); ghi mức đang áp dụng cuối tháng.' },
-];
-
-/** Chuỗi nhập tay đến hạn: kỳ mới nhất đáng lẽ đã công bố mà chưa có. */
-function manualDue(manualDocs, today) {
-  const [y, m, d] = today.split('-').map(Number);
-  const due = [];
-  for (const def of MANUAL_SERIES) {
-    const doc = manualDocs.find((x) => x.id === def.id);
-    const lastPeriod = doc?.d?.length ? doc.d[doc.d.length - 1].slice(0, 7) : null;
-    let py = y; let pm = m - 1;
-    if (d < def.releaseDay) pm -= 1;
-    if (pm < 1) { pm += 12; py -= 1; }
-    const expected = `${py}-${String(pm).padStart(2, '0')}`;
-    if (!lastPeriod || lastPeriod < expected) due.push({ id: def.id, name: def.name, period: expected, hint: def.hint, last: lastPeriod });
-  }
-  return due;
+/** So sánh hai version dạng a.b.c (bỏ qua hậu tố rc). */
+export function cmpVersion(a, b) {
+  const pa = String(a).split(/[.-]/).map(Number);
+  const pb = String(b).split(/[.-]/).map(Number);
+  for (let i = 0; i < 3; i++) if (pa[i] !== pb[i]) return pa[i] - pb[i];
+  return 0;
 }
 
-// ------------------------------------------------------------------ lệnh fetch
+// ------------------------------------------------------------------ số liệu
 
-function cmdFetch(o) {
-  const ref = o.ref || 'main';
-  const base = `https://raw.githubusercontent.com/${REPO}/${ref}/data/`;
-  const out = o.out || 'data';
-  const catalog = JSON.parse(curl(base + 'catalog.json'));
-  writeJson(path.join(out, 'catalog.json'), catalog);
-  let n = 0;
-  for (const a of catalog.assets) { fs.mkdirSync(path.join(out, 'prices'), { recursive: true }); fs.writeFileSync(path.join(out, 'prices', `${a.id}.json`), curl(`${base}prices/${a.id}.json`)); n++; }
-  for (const s of catalog.series) { fs.mkdirSync(path.join(out, 'series'), { recursive: true }); fs.writeFileSync(path.join(out, 'series', `${s.id}.json`), curl(`${base}series/${s.id}.json`)); n++; }
-  try { fs.mkdirSync(path.join(out, 'qa'), { recursive: true }); fs.writeFileSync(path.join(out, 'qa', 'latest.json'), curl(base + 'qa/latest.json')); } catch { /* QA không bắt buộc */ }
-  const last = catalog.assets.map((a) => `${a.id} ${a.last}`).join(', ');
-  console.log(JSON.stringify({ ok: true, files: n, ref, lastPrices: last }));
-}
-
-// ------------------------------------------------------------------ lệnh plan
-
-function cmdPlan(o) {
-  const dump = loadDump(o.dump);
-  const today = o.today || vnToday();
-  const T = E.toDay(today);
-  const st = dump['meta/status']?.data || {};
-  const need = new Set();
-  for (const h of E.HORIZONS) for (const d of st.pending?.[h.id] || []) if (E.toDay(d) + h.days <= T) need.add(d);
-  for (const d of st.p7Pending || []) if (E.toDay(d) + 7 <= T) need.add(d);
-  const docs = ['meta/status', 'config/current', 'models/registry', 'scores/summary', 'public/latest'];
-  const out = {
-    read: docs, list: ['experiments', 'manual'],
-    forecasts: [...need].sort().map((d) => `forecasts/${d}`),
-    note: 'Lưu mỗi doc vào dump/<collection>__<id>.json dạng {"version": n, "data": {...}}; doc chưa có thì bỏ qua.',
+export function loadData(dir) {
+  const read = (sub) => {
+    const d = path.join(dir, sub);
+    return fs.existsSync(d) ? fs.readdirSync(d).filter((f) => f.endsWith('.json')).sort().map((f) => readJson(path.join(d, f))) : [];
   };
-  console.log(JSON.stringify(out, null, 1));
+  const qaF = path.join(dir, 'qa', 'latest.json');
+  const catF = path.join(dir, 'catalog.json');
+  return {
+    raw: { assets: read('prices'), series: read('series') },
+    qa: fs.existsSync(qaF) ? readJson(qaF) : null,
+    catalog: fs.existsSync(catF) ? readJson(catF) : null,
+  };
 }
 
-// ------------------------------------------------------------------ lệnh run
+const champObj = (registry) => (registry?.champion
+  ? Object.fromEntries(Object.entries(registry.champion).map(([g, hs]) => [g, Object.fromEntries(Object.entries(hs).map(([h, m]) => [h, { model: m }]))]))
+  : null);
+const champPlain = (ch) => Object.fromEntries(Object.entries(ch).map(([g, hs]) => [g, Object.fromEntries(Object.entries(hs).map(([h, c]) => [h, c.model]))]));
 
-function loadData(dir, manualDocs) {
-  const read = (sub) => (fs.existsSync(path.join(dir, sub)) ? fs.readdirSync(path.join(dir, sub)).filter((f) => f.endsWith('.json')).map((f) => readJson(path.join(dir, sub, f))) : []);
-  const qa = fs.existsSync(path.join(dir, 'qa', 'latest.json')) ? readJson(path.join(dir, 'qa', 'latest.json')) : null;
-  const catalog = fs.existsSync(path.join(dir, 'catalog.json')) ? readJson(path.join(dir, 'catalog.json')) : null;
-  const manual = manualDocs.map((m) => ({ ...m, manual: true }));
-  return { raw: { assets: read('prices'), series: read('series'), manual }, qa, catalog };
-}
+// ------------------------------------------------------------------ daily (GitHub Actions)
 
-function champObj(registry) {
-  if (!registry?.champion) return null;
-  return Object.fromEntries(Object.entries(registry.champion).map(([g, hs]) => [g, Object.fromEntries(Object.entries(hs).map(([h, m]) => [h, { model: m }]))]));
-}
-
-function champPlain(ch) {
-  return Object.fromEntries(Object.entries(ch).map(([g, hs]) => [g, Object.fromEntries(Object.entries(hs).map(([h, c]) => [h, c.model]))]));
-}
-
-function cmdRun(o) {
+/**
+ * Một lần chạy hằng ngày: chấm dự báo tới hạn, hạ ngôi nếu cần, phép thử hằng tuần, quyết định hằng
+ * tháng, dự báo hôm nay (ghi sổ bất biến) và dựng file cho trang.
+ */
+export function daily(o) {
   const today = o.today || vnToday();
   const T = E.toDay(today);
-  const outDir = o.out || 'out';
-  const dump = loadDump(o.dump);
-  const manualDocs = Object.entries(dump).filter(([k]) => k.startsWith('manual/')).map(([, v]) => v.data);
-  const { raw, qa, catalog } = loadData(o.data || 'data', manualDocs);
-  const status = structuredClone(dump['meta/status']?.data || {});
-  const version = status.version || INITIAL_VERSION;
-  const cfgDoc = dump['config/current']?.data;
-  const regDoc = dump['models/registry']?.data;
-  let config = cfgDoc?.config || {};
-  let configVersion = cfgDoc?.configVersion || 1;
-  const first = !cfgDoc;
-  const notes = [];
-  const versionEvents = [];
-  const writes = [];
-  const errors = [];
+  const stateDir = o.state || 'state';
+  const siteDir = o.site || 'site';
+  const S = loadState(stateDir);
+  if (S[`forecasts/${today}`] && !o.force) return { ok: true, today, skipped: 'đã có dự báo hôm nay (sổ dự báo ghi một lần mỗi ngày)' };
 
-  let run = E.runEngine(raw, { today, config, champions: champObj(regDoc), summary: dump['scores/summary']?.data });
-  if (first || run.tailChosen) config = { ...config, tail: run.cfg.tail };
-  let registry = regDoc ? structuredClone(regDoc) : {
+  const { raw, qa, catalog } = loadData(o.data || 'data');
+  const status = clone(S['meta/status']) || { schemaVersion: E.SCHEMA_VERSION };
+  const first = !S['config/current'];
+  let version = status.version || INITIAL_VERSION;
+  let config = clone(S['config/current']?.config) || {};
+  let configVersion = S['config/current']?.configVersion || 1;
+  const notes = [];
+  const errors = [];
+  const versionEvents = [];
+  const docs = {};
+  const prevSummary = S['scores/summary'] || null;
+
+  let run = E.runEngine(raw, { today, config, champions: champObj(S['models/registry']), summary: prevSummary });
+  if (first) config = { ...config, tail: run.cfg.tail };
+  const registry = clone(S['models/registry']) || {
     schemaVersion: E.SCHEMA_VERSION, champion: champPlain(run.initialChampions), previous: {},
     reasons: Object.fromEntries(Object.entries(run.initialChampions).map(([g, hs]) => [g, Object.fromEntries(Object.entries(hs).map(([h, c]) => [h, c.reason]))])),
-    shadow: [], retired: [], history: [{ date: today, event: 'khởi tạo', champion: champPlain(run.initialChampions) }],
+    history: [{ date: today, event: 'khởi tạo', champion: champPlain(run.initialChampions) }],
   };
 
-  // ---- chấm dự báo tới hạn và điểm tạm 7 ngày
-  const fdocs = Object.entries(dump).filter(([k]) => k.startsWith('forecasts/')).map(([, v]) => v.data);
-  const tamper = fdocs.filter((d) => !E.verifyForecastDoc(d));
-  if (tamper.length) errors.push(`hash sổ dự báo không khớp: ${tamper.map((d) => d.date).join(', ')} (không chấm các doc này)`);
-  const okDocs = fdocs.filter((d) => E.verifyForecastDoc(d));
-  const { scored, waiting } = E.scoreMatured(okDocs.filter((d) => (status.pending?.['1m'] || []).includes(d.date) || (status.pending?.['3m'] || []).includes(d.date)), run.data, T);
-  const p7docs = okDocs.filter((d) => (status.p7Pending || []).includes(d.date) && E.toDay(d.date) + 7 <= T);
-  const p7s = p7docs.flatMap((d) => E.scoreProvisional7(d, run.data));
-  const summary = E.updateSummary(dump['scores/summary']?.data || null, scored, p7s, today);
-  status.pending ??= { '1m': [], '3m': [] };
+  // ---- chấm dự báo tới hạn (mỗi kỳ hạn chấm riêng phần của nó) và điểm tạm 7 ngày
+  status.pending ??= Object.fromEntries(E.HORIZONS.map((h) => [h.id, []]));
+  const dueDocs = [];
+  const p7Docs = [];
+  const verified = new Map();
+  const getDoc = (d) => {
+    if (verified.has(d)) return verified.get(d);
+    const doc = S[`forecasts/${d}`];
+    let ok = null;
+    if (!doc) errors.push(`thiếu forecasts/${d} trong sổ dự báo`);
+    else if (!E.verifyForecastDoc(doc)) errors.push(`hash forecasts/${d} không khớp: bỏ qua, không chấm`);
+    else ok = doc;
+    verified.set(d, ok);
+    return ok;
+  };
   for (const h of E.HORIZONS) {
-    status.pending[h.id] = (status.pending[h.id] || []).filter((d) => {
-      if (E.toDay(d) + h.days > T) return true; // chưa tới hạn
-      const stillWaiting = waiting.some((w) => w.fd === d && w.h === h.id);
-      return stillWaiting && E.toDay(d) + h.days + 10 >= T;
-    });
+    for (const d of status.pending[h.id] || []) {
+      if (E.toDay(d) + h.days > T) continue;
+      const doc = getDoc(d);
+      if (doc) dueDocs.push({ date: doc.date, items: doc.items.filter((it) => it.h === h.id) });
+    }
+  }
+  for (const d of status.p7Pending || []) if (E.toDay(d) + 7 <= T) { const doc = getDoc(d); if (doc) p7Docs.push(doc); }
+  const { scored, waiting } = E.scoreMatured(dueDocs, run.data, T);
+  const p7s = p7Docs.flatMap((d) => E.scoreProvisional7(d, run.data));
+  const summary = E.updateSummary(prevSummary, scored, p7s, today);
+  for (const h of E.HORIZONS) {
+    status.pending[h.id] = (status.pending[h.id] || []).filter((d) => E.toDay(d) + h.days > T || waiting.some((w) => w.fd === d && w.h === h.id));
   }
   status.p7Pending = (status.p7Pending || []).filter((d) => E.toDay(d) + 7 > T);
+  if (scored.length || p7s.length) docs[`scores/${today}`] = { schemaVersion: E.SCHEMA_VERSION, date: today, matured: scored, provisional7: p7s };
 
-  // ---- postmortem
-  const qaFlags = new Set((qa?.assets || []).filter((a) => a.quarantine?.length || a.check?.status === 'lệch' || a.stale).map((a) => a.id));
-  const riskAt = (iso) => E.regimeReport(run.data, E.toDay(iso), run.panel.cache).risk.state;
+  // ---- postmortem cho dự báo trượt
+  const qaFlags = new Set((qa?.assets || []).filter((a) => a.check?.status === 'lệch' || a.stale || a.errors?.length).map((a) => a.id));
+  const riskCache = new Map();
+  const riskAt = (iso) => {
+    if (!riskCache.has(iso)) riskCache.set(iso, E.regimeReport(run.data, E.toDay(iso), run.panel.cache).risk.state);
+    return riskCache.get(iso);
+  };
   const pms = E.postmortems(scored, { qaFlags, riskAt });
+  for (const p of pms) docs[`postmortems/${p.id}`] = { schemaVersion: E.SCHEMA_VERSION, ...p, createdAt: today };
 
-  // ---- hạ ngôi tự động: nhà vô địch kém M1 trong 6 khoảng gần nhất với độ chắc ≥ 0,9
+  // ---- hạ ngôi: nhà vô địch kém M1 trong 6 khoảng trực tiếp gần nhất với độ chắc ≥ 0,9
   for (const [g, hs] of Object.entries(registry.champion)) {
     for (const [h, M] of Object.entries(hs)) {
       if (M === 'M1') continue;
       const lv = E.liveSkill(summary, h, g, M, run.cfg.gates.demoteIntervals);
       if (lv.intervals >= run.cfg.gates.demoteIntervals && lv.pBetter !== null && 1 - lv.pBetter >= run.cfg.gates.demoteConfidence) {
-        const back = registry.previous?.[g]?.[h] || 'M1';
+        const back = registry.previous?.[g]?.[h] && registry.previous[g][h] !== M ? registry.previous[g][h] : 'M1';
         registry.champion[g][h] = back;
-        registry.history.push({ date: today, event: 'hạ ngôi', group: g, h, from: M, to: back, reason: `kém M1 trong ${lv.intervals} khoảng gần nhất (độ chắc ${(1 - lv.pBetter).toFixed(2)})` });
-        versionEvents.push({ kind: 'minor', type: 'demotion', text: `Hạ ngôi ${M} ở ${g} ${h} về ${back}` });
+        registry.history.push({ date: today, event: 'hạ ngôi', group: g, h, from: M, to: back, reason: `kém M1 trong ${lv.intervals} khoảng trực tiếp gần nhất (độ chắc ${(1 - lv.pBetter).toFixed(2)})` });
+        versionEvents.push({ kind: 'minor', type: 'demotion', text: `Hạ ngôi ${M} ở ${E.GROUP_NAMES[g]} ${h} về ${back}` });
       }
     }
   }
 
-  // ---- tối ưu tham số an toàn
-  let optimizeResult = null;
-  if (o.optimize) {
-    try {
-      optimizeResult = E.optimize(run.data, run.cfg, run.panel);
-      if (optimizeResult.accepted) {
-        config = { ...config, params: { ...(config.params || {}), ...Object.fromEntries(optimizeResult.changes.map((c) => [c.key, c.to])) } };
-        versionEvents.push({ kind: 'patch', type: 'config', text: `Tối ưu ${optimizeResult.changes.length} tham số`, changes: optimizeResult.changes, pBetter: optimizeResult.pBetter });
-      }
-    } catch (e) { errors.push(`tối ưu lỗi: ${e.message}`); }
-  }
-
-  // ---- phép thử hằng tuần
-  const expDocs = Object.entries(dump).filter(([k]) => k.startsWith('experiments/')).map(([, v]) => v.data);
-  const expWrites = [];
-  if (first) for (const s of E.SEED_EXPERIMENTS) expWrites.push({ ...s, status: 'proposed', createdAt: today, history: [{ date: today, status: 'proposed' }] });
-  const trialsSoFar = expDocs.filter((e) => e.status !== 'proposed').length;
-  if (o.experiments) {
-    const proposed = [...expDocs, ...expWrites].filter((e) => e.status === 'proposed').slice(0, 3);
-    let trials = trialsSoFar;
-    for (const exp of proposed) {
+  // ---- phép thử hằng tuần (Chủ nhật, hoặc bù nếu lần trước đã quá 8 ngày)
+  const experiments = Object.fromEntries(Object.entries(S).filter(([k]) => k.startsWith('experiments/')).map(([k, v]) => [k.slice(12), clone(v)]));
+  if (first) for (const s of E.SEED_EXPERIMENTS) experiments[s.id] = { schemaVersion: E.SCHEMA_VERSION, ...s, status: 'proposed', createdAt: today, history: [{ date: today, status: 'proposed' }] };
+  const changedExp = new Set(first ? E.SEED_EXPERIMENTS.map((s) => s.id) : []);
+  const lastWeekly = status.lastWeekly ? E.toDay(status.lastWeekly) : null;
+  const weekly = o.weekly === true || (o.weekly !== 'no' && status.lastWeekly !== today && (weekday(today) === 0 || (lastWeekly !== null && T - lastWeekly >= 8)));
+  let trials = Object.values(experiments).filter((e) => e.status !== 'proposed').length;
+  if (weekly) {
+    status.lastWeekly = today;
+    for (const exp of Object.values(experiments).filter((e) => e.status === 'proposed').sort((a, b) => a.id.localeCompare(b.id)).slice(0, 3)) {
       try {
         const r = E.runExperiment(run.data, run.cfg, run.panel, exp, run.champions, run.ev, trials);
         trials++;
-        const upd = { ...exp, status: r.status, testedAt: today, result: r, history: [...(exp.history || []), { date: today, status: r.status, reason: r.reason }] };
-        const idx = expWrites.findIndex((e) => e.id === exp.id);
-        if (idx >= 0) expWrites[idx] = upd; else expWrites.push(upd);
-        notes.push(`Phép thử ${exp.id}: ${r.status === 'shadow' ? 'qua cửa kiểm định, chạy shadow' : 'trượt'} (${r.reason})`);
+        experiments[exp.id] = { ...exp, status: r.status, testedAt: today, result: r, history: [...(exp.history || []), { date: today, status: r.status, reason: r.reason }] };
+        changedExp.add(exp.id);
+        notes.push(`Phép thử ${exp.id} (${exp.title}): ${r.status === 'shadow' ? 'qua cửa kiểm định, chạy song song (shadow)' : 'trượt'}.`);
       } catch (e) { errors.push(`phép thử ${exp.id} lỗi: ${e.message}`); }
     }
   }
 
-  // ---- hằng tháng: xét lên ngôi, gom postmortem thành giả thuyết, đánh giá tháng
-  let review = null;
-  if (o.monthly) {
-    const month = today.slice(0, 7);
-    for (const exp of [...expDocs, ...expWrites].filter((e) => e.status === 'shadow')) {
+  // ---- quyết định hằng tháng (lần chạy đầu tiên của tháng mới)
+  const month = today.slice(0, 7);
+  const monthly = o.monthly === true || (o.monthly !== 'no' && !!status.lastMonthly && status.lastMonthly !== month);
+  let optimizeResult = null;
+  if (first) status.lastMonthly = month;
+  if (monthly) {
+    status.lastMonthly = month;
+    // (a) phép thử đang shadow: đủ khoảng trực tiếp và không kém nhà vô địch thì lên ngôi
+    for (const exp of Object.values(experiments).filter((e) => e.status === 'shadow')) {
       for (const pass of exp.result?.passed || []) {
-        const lv = E.liveSkill(summary, pass.h, pass.g, `X:${exp.id}:${pass.model}`);
         const champ = registry.champion[pass.g]?.[pass.h] || 'M1';
+        const lv = E.liveSkill(summary, pass.h, pass.g, `X:${exp.id}:${pass.model}`);
         const lc = E.liveSkill(summary, pass.h, pass.g, champ);
         const det = exp.result.details?.[pass.g]?.[pass.h];
-        const ok = lv.intervals >= run.cfg.gates.liveIntervals && lv.skill !== null && lc.skill !== null && lv.skill >= lc.skill
+        const ok = lv.intervals >= run.cfg.gates.liveIntervals && lv.skill !== null && (lc.skill === null || lv.skill >= lc.skill)
           && det && det.coverage >= run.cfg.gates.coverage[0] && det.coverage <= run.cfg.gates.coverage[1];
-        if (ok) {
-          config = E.mergeConfig ? E.mergeConfig(config, exp.override) : { ...config, ...exp.override };
-          registry.previous[pass.g] = { ...(registry.previous[pass.g] || {}), [pass.h]: champ };
-          registry.champion[pass.g][pass.h] = pass.model;
-          registry.history.push({ date: today, event: 'lên ngôi', group: pass.g, h: pass.h, from: champ, to: pass.model, experiment: exp.id });
-          versionEvents.push({ kind: 'minor', type: 'promotion', text: `Lên ngôi ${pass.model} (${exp.id}) ở ${pass.g} ${pass.h}` });
-          expWrites.push({ ...exp, status: 'promoted', history: [...(exp.history || []), { date: today, status: 'promoted' }] });
-        }
+        if (!ok) continue;
+        config = E.mergeConfig(config, exp.override);
+        registry.previous[pass.g] = { ...(registry.previous[pass.g] || {}), [pass.h]: champ };
+        registry.champion[pass.g][pass.h] = pass.model;
+        registry.history.push({ date: today, event: 'lên ngôi', group: pass.g, h: pass.h, from: champ, to: pass.model, experiment: exp.id });
+        versionEvents.push({ kind: 'minor', type: 'promotion', text: `Lên ngôi ${pass.model} (${exp.id}) ở ${E.GROUP_NAMES[pass.g]} ${pass.h}` });
+        experiments[exp.id] = { ...experiments[exp.id], status: 'promoted', history: [...(exp.history || []), { date: today, status: 'promoted' }] };
+        changedExp.add(exp.id);
       }
     }
-    for (const pr of E.promotionsFromCandidates(run.ev, registry, (h, g, M) => E.liveSkill(summary, h, g, M), run.cfg, trialsSoFar)) {
+    // (b) ứng viên sẵn có M2–M5 đủ cả ba cửa
+    for (const pr of E.promotionsFromCandidates(run.ev, registry, (h, g, M) => E.liveSkill(summary, h, g, M), run.cfg, trials)) {
       registry.previous[pr.g] = { ...(registry.previous[pr.g] || {}), [pr.h]: pr.from };
       registry.champion[pr.g][pr.h] = pr.to;
       registry.history.push({ date: today, event: 'lên ngôi', group: pr.g, h: pr.h, from: pr.from, to: pr.to, reason: pr.reason });
-      versionEvents.push({ kind: 'minor', type: 'promotion', text: `Lên ngôi ${pr.to} ở ${pr.g} ${pr.h} (${pr.reason})` });
+      versionEvents.push({ kind: 'minor', type: 'promotion', text: `Lên ngôi ${pr.to} ở ${E.GROUP_NAMES[pr.g]} ${pr.h}` });
     }
-    const allPms = Object.entries(dump).filter(([k]) => k.startsWith('postmortems/')).map(([, v]) => v.data).concat(pms);
-    const monthPms = allPms.filter((p) => (p.end || '').slice(0, 7) >= E.fromDay(T - 31).slice(0, 7));
-    for (const hyp of E.hypothesesFromPostmortems(monthPms, month, [...expDocs, ...expWrites])) expWrites.push({ ...hyp, createdAt: today, history: [{ date: today, status: 'proposed' }] });
-    review = {
-      schemaVersion: E.SCHEMA_VERSION, month, date: today, version,
-      backtest: Object.fromEntries(E.HORIZONS.map((h) => [h.id, Object.fromEntries(Object.entries(run.ev[h.id].groups).map(([g, sc]) => [g, sc && { skill: sc.models[registry.champion[g]?.[h.id] || 'M1'].skill, ece: sc.models[registry.champion[g]?.[h.id] || 'M1'].ece, coverage: sc.coverage }]))])),
-      live: Object.fromEntries(E.HORIZONS.map((h) => [h.id, Object.fromEntries(run.data.groups.map((g) => [g, E.liveSkill(summary, h.id, g, registry.champion[g]?.[h.id] || 'M1')]))])),
-      ai: Object.fromEntries(run.data.groups.map((g) => [g, E.liveSkill(summary, '1m', g, 'M6')])),
-      postmortems: monthPms.map((p) => ({ id: p.id, cause: p.causeLabel, assets: p.assets })),
-      experiments: [...expDocs, ...expWrites].map((e) => ({ id: e.id, status: e.status, title: e.title })),
-      qaIssues: qa?.issues || [],
-      next: 'Giả thuyết tháng tới: các phép thử ở trạng thái proposed trong experiments/.',
-    };
-    notes.push(`Đánh giá tháng ${month} đã ghi vào reviews/monthly-${month}.`);
+    // (c) tối ưu tham số an toàn
+    try {
+      optimizeResult = E.optimize(run.data, run.cfg, run.panel);
+      if (optimizeResult.accepted) {
+        config = { ...config, params: { ...(config.params || {}), ...Object.fromEntries(optimizeResult.changes.map((c) => [c.key, c.to])) } };
+        versionEvents.push({ kind: 'patch', type: 'config', text: `Tối ưu ${optimizeResult.changes.length} tham số (${optimizeResult.changes.map((c) => `${c.key} ${c.from}→${c.to}`).join(', ')})` });
+      } else notes.push(`Tối ưu tham số: giữ nguyên (${optimizeResult.reason}).`);
+    } catch (e) { errors.push(`tối ưu lỗi: ${e.message}`); }
+    // (d) giả thuyết mới từ postmortem trong khoảng 35 ngày gần nhất
+    const since = E.fromDay(T - 35);
+    const recentPms = Object.entries(S).filter(([k]) => k.startsWith('postmortems/')).map(([, v]) => v).concat(pms).filter((p) => (p.end || p.fd || '') >= since);
+    for (const hyp of E.hypothesesFromPostmortems(recentPms, month, Object.values(experiments))) {
+      experiments[hyp.id] = { schemaVersion: E.SCHEMA_VERSION, ...hyp, createdAt: today, history: [{ date: today, status: 'proposed' }] };
+      changedExp.add(hyp.id);
+    }
+    docs[`reviews/monthly-${month}`] = monthlyReview({ run, registry, summary, experiments, pms: recentPms, qa, month, today, version, optimizeResult });
+    notes.push(`Đánh giá tháng ${month} đã ghi (state/reviews/monthly-${month}.json).`);
   }
+  for (const id of changedExp) docs[`experiments/${id}`] = experiments[id];
 
-  // ---- cấu hình hoặc nhà vô địch đổi thì chạy lại engine để dự báo hôm nay theo bản mới
-  let newVersion = version;
-  for (const ev of versionEvents) newVersion = bumpVersion(newVersion, ev.kind);
-  if (versionEvents.length) {
-    configVersion += versionEvents.some((e) => e.type === 'config' || e.type === 'promotion') ? 1 : 0;
-    run = E.runEngine(raw, { today, config, champions: champObj(registry), summary });
-  }
+  // ---- cấu hình hoặc nhà vô địch đổi: tăng version và chạy lại để dự báo hôm nay theo bản mới
+  const prevVersion = version;
+  for (const ev of versionEvents) version = bumpVersion(version, ev.kind);
+  const configChanged = versionEvents.some((e) => e.type === 'config' || e.type === 'promotion');
+  if (configChanged) configVersion += 1;
+  if (versionEvents.length) run = E.runEngine(raw, { today, config, champions: champObj(registry), summary });
 
-  // ---- shadow: dự báo song song của phép thử đang shadow
-  const shadow = [];
-  for (const exp of [...expDocs, ...expWrites].filter((e) => e.status === 'shadow')) {
+  // ---- shadow: dự báo song song của phép thử đang chạy shadow, ghi vào sổ để chấm trực tiếp
+  const shadowIds = [];
+  for (const exp of Object.values(experiments).filter((e) => e.status === 'shadow')) {
     try {
       const r = E.runEngine(raw, { today, config: E.mergeConfig(config, exp.override), champions: champObj(registry) });
-      for (const it of r.live.items) {
-        const passG = (exp.result?.passed || []).filter((p) => p.g === it.g && p.h === it.h);
-        for (const p of passG) shadow.push({ exp: exp.id, a: it.a, h: it.h, model: `X:${exp.id}:${p.model}`, p: it.p[p.model] });
+      const byKey = new Map(r.live.items.map((it) => [`${it.a}|${it.h}`, it]));
+      for (const it of run.live.items) {
+        const sh = byKey.get(`${it.a}|${it.h}`);
+        for (const p of (exp.result?.passed || []).filter((x) => x.g === it.g && x.h === it.h)) {
+          if (sh && Number.isFinite(sh.p[p.model])) it.p[`X:${exp.id}:${p.model}`] = r4(sh.p[p.model]);
+        }
       }
+      shadowIds.push(exp.id);
     } catch (e) { errors.push(`shadow ${exp.id} lỗi: ${e.message}`); }
   }
 
-  // ---- doc trạng thái
-  const cfgOut = { schemaVersion: E.SCHEMA_VERSION, configVersion, updatedAt: today, config: { ...config, tail: run.cfg.tail } };
-  status.version = newVersion;
-  status.lastRun = { date: today, at: nowIso(), ms: run.ms, scored: scored.length, waiting: waiting.length, errors };
-  status.ledgerDates = [...new Set([...(status.ledgerDates || []), today])].sort().slice(-LEDGER_DATES_KEEP);
+  // ---- sổ dự báo hôm nay (bất biến, có hash)
+  const createdAt = nowIso();
+  const fdoc = E.forecastDoc(run.live, { configVersion, version, createdAt, ai: null, shadow: shadowIds });
+  docs[`forecasts/${today}`] = fdoc;
+
+  // ---- version, cấu hình, nhà vô địch, tóm tắt, trạng thái
+  const cfgOut = { schemaVersion: E.SCHEMA_VERSION, configVersion, updatedAt: configChanged || first ? today : S['config/current']?.updatedAt || today, config: { ...config, tail: run.cfg.tail } };
+  docs['config/current'] = cfgOut;
+  if (first || configChanged) docs[`config/v${configVersion}`] = cfgOut;
+  docs['models/registry'] = { ...registry, updatedAt: today };
+  docs['scores/summary'] = summary;
+  if (first || versionEvents.length) {
+    docs[`versions/${version}`] = {
+      schemaVersion: E.SCHEMA_VERSION, version, date: today, from: first ? null : prevVersion,
+      events: first ? [{ kind: 'init', type: 'init', text: 'Khởi tạo macro-radar 2: M1 làm nhà vô địch ở nơi chưa ứng viên nào qua cửa kiểm định.' }] : versionEvents,
+      snapshot: { config: cfgOut.config, configVersion, champion: registry.champion }, metrics: evalSummary(run),
+    };
+  }
+  status.schemaVersion = E.SCHEMA_VERSION;
+  status.version = version;
+  status.engineVersion = E.ENGINE_VERSION;
+  status.lastRun = { date: today, at: createdAt, ms: run.ms, scored: scored.length, p7: p7s.length, waiting: waiting.length, weekly, monthly, errors, notes };
   for (const h of E.HORIZONS) status.pending[h.id] = [...new Set([...(status.pending[h.id] || []), today])].filter((d) => E.toDay(d) >= T - PENDING_KEEP_DAYS).sort();
   status.p7Pending = [...new Set([...(status.p7Pending || []), today])].sort();
+  status.ledger = [...(status.ledger || []).filter((x) => x.date !== today), { date: today, hash: fdoc.hash, version, configVersion }].slice(-LEDGER_LIST_KEEP);
   status.dataAsOf = Object.fromEntries(run.live.items.filter((i) => i.h === '1m').map((i) => [i.a, i.pd]));
   status.qaIssues = qa?.issues || [];
+  docs['meta/status'] = status;
 
-  // ---- nội dung cho bước finalize
-  const state = {
-    today, version: newVersion, configVersion, first, live: run.live, champions: champPlain(run.champions), badges: run.badges,
-    regime: run.regime, notes, errors, versionEvents, optimize: optimizeResult && { accepted: optimizeResult.accepted, changes: optimizeResult.changes, pBetter: optimizeResult.pBetter, reason: optimizeResult.reason },
-    scoredToday: scored, p7Today: p7s, postmortems: pms, shadow, manualDue: manualDue(manualDocs, today), moves: topMoves(run),
-    dumpVersions: Object.fromEntries(Object.entries(dump).map(([k, v]) => [k, v.version ?? null])),
-    docs: {
-      'config/current': cfgOut,
-      'models/registry': { ...registry, updatedAt: today },
-      'scores/summary': summary,
-      'meta/status': status,
-      ...(scored.length || p7s.length ? { [`scores/${today}`]: { schemaVersion: E.SCHEMA_VERSION, date: today, matured: scored, provisional7: p7s } } : {}),
-      ...Object.fromEntries(pms.map((p) => [`postmortems/${p.id}`, { schemaVersion: E.SCHEMA_VERSION, ...p, createdAt: today }])),
-      ...Object.fromEntries(expWrites.map((e) => [`experiments/${e.id}`, { schemaVersion: E.SCHEMA_VERSION, ...e }])),
-      ...(review ? { [`reviews/monthly-${review.month}`]: review } : {}),
-      ...(qa ? { [`qa/${today}`]: { schemaVersion: E.SCHEMA_VERSION, date: today, generatedAt: qa.generated_at, issues: qa.issues || [], revisions: qa.revisions ?? 0 } } : {}),
-      ...(catalog ? { 'series/catalog': { schemaVersion: E.SCHEMA_VERSION, updatedAt: today, ...catalog } } : {}),
-    },
-    versionDocs: versionEvents.length ? [{ version: newVersion, date: today, events: versionEvents,
-      snapshot: { config: cfgOut.config, champion: registry.champion }, metrics: summarizeEval(run) }] : [],
+  const written = saveState(stateDir, docs);
+
+  // ---- file cho trang và cho tác vụ AI
+  const site = buildSite(run, { S: { ...S, ...docs }, qa, catalog, version, today, createdAt, notes, errors, versionEvents });
+  writeJson(path.join(siteDir, 'bundle.json'), site.core);
+  writeJson(path.join(siteDir, 'history.json'), site.history);
+  writeJson(path.join(siteDir, 'latest.json'), site.latest);
+  writeJson(path.join(siteDir, 'ai_context.json'), site.aiContext, true);
+  return {
+    ok: errors.length === 0, today, version, engineMs: run.ms, items: run.live.items.length, missing: run.live.missing, hash: fdoc.hash,
+    scored: scored.length, p7: p7s.length, waiting: waiting.length, postmortems: pms.length, weekly, monthly,
+    versionEvents: versionEvents.map((e) => e.text), notes, errors, written: written.length,
   };
-  if (versionEvents.some((e) => e.type === 'config' || e.type === 'promotion')) state.docs[`config/v${configVersion}`] = cfgOut;
-  fs.mkdirSync(outDir, { recursive: true });
-  writeJson(path.join(outDir, 'state.json'), state);
-  const bundle = E.buildBundle(run, { qa, catalog, version: newVersion, generatedAt: nowIso() });
-  writeJson(path.join(outDir, 'bundle.pre.json'), bundle);
-  writeJson(path.join(outDir, 'ai_context.json'), aiContext(run, state, raw), true);
-  const ctxSize = fs.statSync(path.join(outDir, 'ai_context.json')).size;
-  console.log(JSON.stringify({
-    ok: errors.length === 0, today, version: newVersion, engineMs: run.ms, items: run.live.items.length, missing: run.live.missing,
-    scored: scored.length, waiting: waiting.length, p7: p7s.length, postmortems: pms.length, versionEvents: versionEvents.map((e) => e.text),
-    manualDue: state.manualDue.map((m) => `${m.id} ${m.period}`), aiContextBytes: ctxSize, errors, next: 'viết analysis.json theo ai_context.json rồi chạy finalize',
-  }, null, 1));
 }
 
-/** Ba biến động phiên gần nhất lớn nhất (theo độ lệch chuẩn của chính tài sản). */
-function topMoves(run) {
-  const out = [];
-  for (const A of run.data.forecastAssets) {
-    const n = A.vals.length;
-    if (n < 300) continue;
-    const ch = A.kind === 'price' ? A.vals[n - 1] / A.vals[n - 2] - 1 : A.vals[n - 1] - A.vals[n - 2];
-    let s = 0; let k = 0;
-    for (let i = n - 252; i < n; i++) if (Number.isFinite(A.ret[i])) { s += A.ret[i] ** 2; k++; }
-    const sd = Math.sqrt(s / Math.max(k, 1));
-    out.push({ id: A.id, name: A.name, kind: A.kind, date: A.dates[n - 1], ch, z: sd > 0 ? Math.abs(A.ret[n - 1]) / sd : 0 });
-  }
-  return out.sort((a, b) => b.z - a.z).slice(0, 3);
-}
-
-function summarizeEval(run) {
+/** Điểm kiểm định của nhà vô địch theo nhóm và kỳ hạn (ghi vào version và đánh giá tháng). */
+export function evalSummary(run) {
   return Object.fromEntries(E.HORIZONS.map((h) => [h.id, Object.fromEntries(Object.entries(run.ev[h.id].groups).map(([g, sc]) => {
     const M = run.champions[g]?.[h.id]?.model || 'M1';
-    return [g, sc && { champion: M, brier: sc.models[M].brier, skill: sc.models[M].skill, pBetter: sc.models[M].pBetter, ece: sc.models[M].ece, coverage: sc.coverage }];
+    return [g, sc && { champion: M, brier: sc.models[M].brier, skill: sc.models[M].skill, pBetter: sc.models[M].pBetter, ece: sc.models[M].ece, coverage: sc.coverage, tailSkill: sc.tail?.skill ?? null }];
   }))]));
 }
 
-/** Ngữ cảnh gọn (< 30 KB) cho nhận định AI. */
-function aiContext(run, state, raw) {
-  const pct = (a, d) => {
-    const A = run.data.assets.get(a);
-    if (!A) return null;
-    const n = A.vals.length;
-    const i0 = E.toDay(A.dates[n - 1]);
-    let j = n - 1;
-    while (j > 0 && E.toDay(A.dates[j]) > i0 - d) j--;
-    return A.kind === 'price' ? A.vals[n - 1] / A.vals[j] - 1 : A.vals[n - 1] - A.vals[j];
+function monthlyReview({ run, registry, summary, experiments, pms, qa, month, today, version, optimizeResult }) {
+  return {
+    schemaVersion: E.SCHEMA_VERSION, month, date: today, version,
+    backtest: evalSummary(run),
+    live: Object.fromEntries(E.HORIZONS.map((h) => [h.id, Object.fromEntries(run.data.groups.map((g) => [g, E.liveSkill(summary, h.id, g, registry.champion[g]?.[h.id] || 'M1')]))])),
+    champion: registry.champion,
+    postmortems: pms.map((p) => ({ id: p.id, cause: p.cause, causeLabel: p.causeLabel, assets: p.assets })),
+    experiments: Object.values(experiments).map((e) => ({ id: e.id, title: e.title, status: e.status, reason: e.result?.reason || null })),
+    optimize: optimizeResult ? { accepted: optimizeResult.accepted, reason: optimizeResult.reason, changes: optimizeResult.changes } : null,
+    qaIssues: qa?.issues || [],
+    next: Object.values(experiments).filter((e) => e.status === 'proposed').map((e) => `${e.id}: ${e.title}`),
+  };
+}
+
+// ------------------------------------------------------------------ file cho trang
+
+/** Ba biến động phiên gần nhất lớn nhất, đo bằng độ lệch chuẩn của chính tài sản. */
+export function topMoves(run, n = 3) {
+  const out = [];
+  for (const A of run.data.forecastAssets) {
+    const k = A.vals.length;
+    if (k < 300) continue;
+    const ch = A.kind === 'price' ? A.vals[k - 1] / A.vals[k - 2] - 1 : A.vals[k - 1] - A.vals[k - 2];
+    let s = 0; let m = 0;
+    for (let i = k - 252; i < k; i++) if (Number.isFinite(A.ret[i])) { s += A.ret[i] ** 2; m++; }
+    const sd = Math.sqrt(s / Math.max(m, 1));
+    out.push({ id: A.id, name: A.name, kind: A.kind, date: A.dates[k - 1], ch: r4(ch), z: sd > 0 ? r4(Math.abs(A.ret[k - 1]) / sd) : 0 });
+  }
+  return out.sort((a, b) => b.z - a.z).slice(0, n);
+}
+
+/** Kỹ năng trực tiếp theo kỳ hạn, nhóm và mô hình (từ tóm tắt sổ dự báo). */
+export function liveStats(summary, groups, registry) {
+  const out = {};
+  for (const h of E.HORIZONS) {
+    out[h.id] = {};
+    for (const g of groups) {
+      const cum = summary?.cum?.[`${h.id}|${g}`];
+      const models = {};
+      for (const M of new Set(['M1', 'M2', 'M3', 'M4', 'M5', ...Object.keys(cum?.models || {})])) {
+        const lv = E.liveSkill(summary, h.id, g, M);
+        const c = cum?.models?.[M];
+        models[M] = { ...lv, n: c ? c[2] : 0, brier: c && c[2] ? r4(c[0] / c[2]) : null };
+      }
+      out[h.id][g] = { champion: registry?.champion?.[g]?.[h.id] || 'M1', models, band: cum ? { inBand: cum.band[0], n: cum.band[1] } : null,
+        tail: cum && cum.tail[2] ? { brier: r4(cum.tail[0] / cum.tail[2]), base: r4(cum.tail[1] / cum.tail[2]), n: cum.tail[2] } : null,
+        p7: summary?.p7?.[`${h.id}|${g}`] || null };
+    }
+  }
+  return out;
+}
+
+/** Dựng bundle (lõi), history (lịch sử nặng), latest (hợp đồng) và ngữ cảnh AI. */
+export function buildSite(run, ctx) {
+  const { S, qa, catalog, version, today, createdAt } = ctx;
+  const full = E.buildBundle(run, { qa, catalog, version, generatedAt: createdAt });
+  const history = {
+    schemaVersion: E.SCHEMA_VERSION, date: today,
+    assets: full.assets.map((a) => ({ id: a.id, d: a.d, c: a.c, md: a.md, mc: a.mc })),
+    series: full.series.map((s) => ({ id: s.id, hist: s.hist })),
+    oos: Object.fromEntries(Object.entries(full.oos).map(([h, recs]) => {
+      const keep = new Set([...new Set(recs.map((r) => r.d))].sort().slice(-HISTORY_OOS_MONTHS));
+      return [h, recs.filter((r) => keep.has(r.d))];
+    })),
+  };
+  const core = { ...full };
+  delete core.oos;
+  core.assets = full.assets.map(({ d, c, md, mc, ...rest }) => ({ ...rest, nDaily: d.length }));
+  core.series = full.series.map(({ hist, ...rest }) => rest);
+  const registry = S['models/registry'];
+  const summary = S['scores/summary'];
+  const status = S['meta/status'];
+  const list = (prefix) => Object.entries(S).filter(([k]) => k.startsWith(prefix)).map(([, v]) => v);
+  core.registry = registry;
+  core.status = { version: status.version, lastRun: status.lastRun, ledger: status.ledger, pending: status.pending, lastWeekly: status.lastWeekly, lastMonthly: status.lastMonthly, qaIssues: status.qaIssues };
+  core.liveStats = liveStats(summary, run.data.groups, registry);
+  core.summaryInfo = { updated: summary?.updated || null, intervals: Object.fromEntries(E.HORIZONS.map((h) => [h.id, (summary?.intervals?.[h.id] || []).map((x) => x.fd)])) };
+  core.versions = list('versions/').sort((a, b) => cmpVersion(b.version, a.version)).map((v) => ({ version: v.version, date: v.date, from: v.from, events: v.events, metrics: v.metrics }));
+  core.experiments = list('experiments/').sort((a, b) => a.id.localeCompare(b.id)).map((e) => ({
+    id: e.id, title: e.title, hypothesis: e.hypothesis, status: e.status, override: e.override, createdAt: e.createdAt, testedAt: e.testedAt || null,
+    reason: e.result?.reason || null, threshold: e.result?.threshold ?? null, passed: e.result?.passed || [], details: e.result?.details || null, history: e.history }));
+  core.postmortems = list('postmortems/').sort((a, b) => String(b.id).localeCompare(String(a.id))).slice(0, 60);
+  core.reviews = list('reviews/').sort((a, b) => b.month.localeCompare(a.month)).slice(0, 6);
+  core.recentScores = list('scores/').filter((x) => x.date && x.matured).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 10)
+    .map((x) => ({ date: x.date, matured: x.matured.map((m) => ({ fd: m.fd, a: m.a, g: m.g, h: m.h, champ: m.champ, p: m.models[m.champ]?.p ?? m.models.M1?.p, m1: m.models.M1?.p, y: m.y, ret: m.ret, inBand: m.inBand, tail: m.tail })) }));
+  core.moves = topMoves(run);
+  core.runNotes = { notes: ctx.notes || [], errors: ctx.errors || [], versionEvents: ctx.versionEvents || [] };
+  core.ai = null;
+  core.aiScores = null;
+  core.manual = [];
+  const latest = E.buildLatest(run, { version, generatedAt: createdAt, ai: null });
+  core.aiContext = aiContext(run, { today, version, notes: ctx.notes || [], qa });
+  return { core, history, latest, aiContext: core.aiContext };
+}
+
+/** Ngữ cảnh gọn (dưới 30 KB) để Claude viết nhận định AI. */
+export function aiContext(run, { today, version, notes, qa }) {
+  const chg = (A, days) => {
+    const k = A.vals.length;
+    const t1 = A.days[k - 1];
+    let j = k - 1;
+    while (j > 0 && A.days[j] > t1 - days) j--;
+    return A.kind === 'price' ? r4(A.vals[k - 1] / A.vals[j] - 1) : r4(A.vals[k - 1] - A.vals[j]);
   };
   const items1 = run.live.items.filter((i) => i.h === '1m');
   const items3 = new Map(run.live.items.filter((i) => i.h === '3m').map((i) => [i.a, i]));
-  const keySeries = ['us_cpi', 'us_pce_core', 'us_unrate', 'us_payems', 'us_ff', 'us_2y', 'us_10y3m', 'us_nfci', 'us_baa10y', 'us_be5y', 'cn_pmi', 'cn_cpi', 'cn_ppi', 'cn_lpr1y', 'cn_10y', 'vn_exports', 'vn_fx', 'w_cli_g20', 'w_ecb'];
-  const T = E.toDay(state.today);
+  const keySeries = ['us_cpi', 'us_pce_core', 'us_unrate', 'us_payems', 'us_icsa', 'us_ff', 'us_2y', 'us_10y', 'us_10y3m', 'us_nfci', 'us_baa10y', 'us_be5y',
+    'cn_pmi', 'cn_cpi', 'cn_ppi', 'cn_lpr1y', 'cn_10y', 'cn_m2', 'vn_exports', 'vn_fx', 'w_cli_g20', 'w_ecb', 'w_boj'];
+  const T = E.toDay(today);
   const macro = [];
   for (const id of keySeries) {
     const s = run.data.series.get(id);
     if (!s) continue;
     const k = s.raw.length - 1;
-    macro.push({ id, name: s.name, date: s.dates[k], value: +s.raw[k].toFixed(4), x: Number.isFinite(s.x[k]) ? +s.x[k].toFixed(3) : null, transform: s.transform, source: s.source?.name, url: s.source?.url, published: E.fromDay(s.avail[k]) <= state.today });
+    macro.push({ id, name: s.name, unit: s.unit, period: s.dates[k], value: r4(s.raw[k]), transformed: Number.isFinite(s.x[k]) ? r4(s.x[k]) : null,
+      transform: s.transform, published: E.fromDay(s.avail[k]), usable: s.avail[k] <= T, source: s.source?.name, url: s.source?.url });
   }
-  for (const m of raw.manual || []) if (m.d?.length) macro.push({ id: m.id, name: m.name, date: m.d[m.d.length - 1], value: m.v[m.v.length - 1], source: 'nhập tay từ thông cáo', confidence: m.src?.[m.src.length - 1]?.confidence });
   return {
     instructions: {
-      language: 'Tiếng Việt, ngắn gọn, đọc trên điện thoại.',
-      schema: '{headline, regime:{verdict, title, explain}, regions:[{id, view}], assets:[{id, prob_up, view (tang|giam|trung_lap), confidence (thap|vua|cao), why, bull, bear, evidence:[2–4 dữ kiện có số và ngày], vs_model}], risks:[...], watch:[...]}',
+      language: 'Tiếng Việt, ngắn gọn, đọc trên điện thoại. Không khuyến nghị mua bán.',
+      schema: '{"headline": string, "regime": {"verdict": string, "title": string, "explain": string}, "regions": [{"id": "us|cn|world|vn", "view": string}], "assets": [{"id", "prob_up" (0–1, xác suất tăng sau 30 ngày), "view": "tang|giam|trung_lap", "confidence": "thap|vua|cao", "why", "bull", "bear", "evidence": [2–4 chuỗi, mỗi chuỗi có số, ngày và tên nguồn], "vs_model"}], "risks": [string], "watch": [string]}',
       rules: [
-        'prob_up là xác suất tăng sau 30 ngày; lệch tối đa ±10 điểm % so với champion_prob (runner sẽ kẹp nếu vượt).',
-        'evidence: 2–4 dữ kiện kèm số và ngày, đọc được từ nguồn trong phiên (ngữ cảnh này hoặc trang đã mở); ưu tiên điều mô hình chưa có như tin tức, sự kiện có lịch.',
-        'confidence chỉ được là cao khi badge của nhóm là strong và số liệu đồng thuận rõ; badge khác strong thì luôn là thap.',
-        'Không bịa số, không khuyến nghị mua bán. Không có dữ kiện thì giữ prob_up bằng champion_prob và ghi rõ.',
+        `prob_up lệch tối đa ±${AI_MAX_DEV * 100} điểm % so với champion_prob; runner sẽ kẹp nếu vượt và ghi lại.`,
+        'evidence: 2–4 dữ kiện kèm số, ngày và nguồn, lấy từ ngữ cảnh này hoặc trang đã mở trong phiên; ưu tiên điều mô hình chưa có như tin tức hay sự kiện có lịch.',
+        'confidence chỉ là "cao" khi badge_1m của tài sản là strong và số liệu đồng thuận rõ; badge khác strong thì luôn là "thap".',
+        'Không bịa số. Không có dữ kiện mới thì giữ prob_up bằng champion_prob và nói rõ.',
       ],
     },
-    date: state.today, version: state.version,
+    date: today, version,
+    groupsBadges: Object.fromEntries(Object.entries(run.badges).map(([g, hs]) => [g, Object.fromEntries(Object.entries(hs).map(([h, b]) => [h, { champion: b.champion, badge: b.key, bss: b.skill, pBetter: b.pBetter }]))])),
     regime: { regions: run.regime.regions, risk: run.regime.risk },
-    groups: Object.fromEntries(Object.entries(run.badges).map(([g, hs]) => [g, Object.fromEntries(Object.entries(hs).map(([h, b]) => [h, { champion: b.champion, badge: b.key, bss: b.skill, pBetter: b.pBetter }]))])),
-    assets: items1.map((i) => ({
-      id: i.a, name: run.data.assets.get(i.a).name, group: i.g, price: i.px, priceDate: i.pd,
-      chg_1d: pct(i.a, 1), chg_7d: pct(i.a, 7), chg_30d: pct(i.a, 30),
-      champion: i.champ, champion_prob: i.pc, base: i.base, models: i.p, band80_1m: [i.lo, i.hi], prob_tail_1m: i.pt, tail_k: i.k,
-      prob_up_3m: items3.get(i.a)?.pc ?? null, badge_1m: i.badge,
-    })),
-    macro, qaIssues: state.docs['meta/status'].qaIssues, notes: state.notes,
+    assets: items1.map((i) => {
+      const A = run.data.assets.get(i.a);
+      return {
+        id: i.a, name: A.name, group: i.g, price: i.px, priceDate: i.pd, chg_1d: chg(A, 1), chg_7d: chg(A, 7), chg_30d: chg(A, 30),
+        champion: i.champ, champion_prob: i.pc, base_m1: i.base, models: i.p, band80_1m: [r4(i.lo), r4(i.hi)], prob_tail_1m: i.pt, tail_k: i.k,
+        prob_up_3m: items3.get(i.a)?.pc ?? null, badge_1m: i.badge,
+      };
+    }),
+    macro, qaIssues: qa?.issues || [], notes,
   };
 }
 
-// ------------------------------------------------------------------ lệnh finalize
+// ------------------------------------------------------------------ lớp AI (tác vụ Claude)
 
-/** Kiểm và kẹp nhận định AI theo luật ở mục 4.5 của spec. */
-function validateAi(ai, state) {
-  if (!ai) return { ai: null, issues: ['chưa có nhận định AI'] };
-  const issues = [];
-  const items1 = new Map(state.live.items.filter((i) => i.h === '1m').map((i) => [i.a, i]));
-  const out = { headline: String(ai.headline || ''), regime: ai.regime || {}, regions: Array.isArray(ai.regions) ? ai.regions : [],
-    assets: [], risks: Array.isArray(ai.risks) ? ai.risks : [], watch: Array.isArray(ai.watch) ? ai.watch : [] };
-  for (const a of Array.isArray(ai.assets) ? ai.assets : []) {
-    const it = items1.get(a.id);
-    if (!it) { issues.push(`${a.id}: không có trong danh sách dự báo`); continue; }
-    let p = Number(a.prob_up);
-    if (!Number.isFinite(p)) { p = it.pc; issues.push(`${a.id}: prob_up không hợp lệ, dùng xác suất nhà vô địch`); }
-    if (p > 1) p /= 100;
-    const lo = Math.max(0.05, it.pc - 0.1);
-    const hi = Math.min(0.95, it.pc + 0.1);
-    if (p < lo || p > hi) { issues.push(`${a.id}: prob_up ${p} ngoài ±10 điểm quanh ${it.pc}, đã kẹp`); p = Math.min(hi, Math.max(lo, p)); }
-    let conf = ['thap', 'vua', 'cao'].includes(a.confidence) ? a.confidence : 'thap';
-    if (it.badge !== 'strong' && conf !== 'thap') { issues.push(`${a.id}: nhóm chưa có cơ sở nên confidence phải là thap`); conf = 'thap'; }
-    const evidence = Array.isArray(a.evidence) ? a.evidence.slice(0, 4) : [];
-    if (evidence.length < 2) issues.push(`${a.id}: evidence dưới 2 dữ kiện`);
-    const view = ['tang', 'giam', 'trung_lap'].includes(a.view) ? a.view : 'trung_lap';
-    out.assets.push({ id: a.id, prob_up: Math.round(p * 1000) / 1000, view, confidence: conf, why: String(a.why || ''), bull: String(a.bull || ''),
-      bear: String(a.bear || ''), evidence, vs_model: String(a.vs_model || ''), champion_prob: it.pc });
-  }
-  return { ai: out, issues };
+export const emptyAiScores = () => ({ schemaVersion: E.SCHEMA_VERSION, cum: {}, intervals: { '1m': [] }, lastInterval: {}, done: {}, updated: null });
+
+/**
+ * Chấm M6 (AI) cho nhận định đã tới hạn 30 ngày: so với M1 và nhà vô địch cùng ngày trong sổ dự báo.
+ * @param {{date:string, probs:Record<string,number>}} due @param {object} fdoc @param {object} data @param {number} T
+ */
+export function scoreAi(due, fdoc, data, T) {
+  if (!due || !fdoc) return [];
+  const items = fdoc.items.filter((it) => it.h === '1m' && Number.isFinite(due.probs?.[it.a]))
+    .map((it) => ({ ...it, m: { M6: due.probs[it.a], M1: it.m.M1, [it.champ]: it.m[it.champ] } }));
+  return E.scoreMatured([{ date: fdoc.date, items }], data, T).scored;
 }
 
-function cmdFinalize(o) {
+/** Cộng điểm M6 vào tóm tắt (cùng cấu trúc với scores/summary để dùng chung liveSkill). */
+export function updateAiScores(prev, scored, today) {
+  const s = prev ? clone(prev) : emptyAiScores();
+  s.intervals ??= { '1m': [] };
+  s.intervals['1m'] ??= [];
+  s.cum ??= {}; s.done ??= {}; s.lastInterval ??= {};
+  const fresh = scored.filter((x) => !s.done[x.fd]);
+  if (fresh.length) {
+    const fd = fresh[0].fd;
+    s.done[fd] = 1;
+    const byG = {};
+    for (const x of fresh) {
+      const c = (s.cum[`1m|${x.g}`] ??= { models: {} });
+      for (const [m, v] of Object.entries(x.models)) {
+        const key = m === x.champ && m !== 'M1' ? 'champ' : m;
+        const t = (c.models[key] ??= [0, 0, 0]);
+        t[0] += v.b; t[1] += v.l; t[2] += 1;
+        const u = ((byG[x.g] ??= {})[key] ??= [0, 0]);
+        u[0] += v.b; u[1] += 1;
+      }
+    }
+    const last = s.lastInterval['1m'];
+    if (!last || E.toDay(fd) >= E.toDay(last) + 30) { s.lastInterval['1m'] = fd; s.intervals['1m'].push({ fd, g: byG }); }
+  }
+  const T = E.toDay(today);
+  for (const k of Object.keys(s.done)) if (E.toDay(k) < T - 120) delete s.done[k];
+  s.updated = today;
+  return s;
+}
+
+function loadManualDir(dir) {
+  if (!dir || dir === true || !fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir).filter((f) => f.endsWith('.json')).sort().map((f) => readDbFile(path.join(dir, f)).data).filter((d) => d && d.id);
+}
+
+/** Lệnh ai: thêm nhận định AI (M6), chấm M6, dựng file đăng và lệnh ghi DB. */
+export function aiLayer(o) {
+  const siteDir = o.site || 'site';
   const outDir = o.out || 'out';
-  const state = readJson(path.join(outDir, 'state.json'));
-  const aiRaw = o.ai && fs.existsSync(o.ai) ? readJson(o.ai) : null;
-  const { ai, issues } = validateAi(aiRaw, state);
-  const aiP = new Map((ai?.assets || []).map((a) => [a.id, a.prob_up]));
-  const live = structuredClone(state.live);
-  for (const it of live.items) {
-    if (it.h === '1m' && aiP.has(it.a)) it.p.M6 = aiP.get(it.a);
-    for (const s of state.shadow.filter((x) => x.a === it.a && x.h === it.h)) it.p[s.model] = Math.round(s.p * 1e4) / 1e4;
-  }
+  const core = readJson(path.join(siteDir, 'bundle.json'));
+  const latest = readJson(path.join(siteDir, 'latest.json'));
+  const today = core.date;
+  const S = loadState(o.state || 'state');
+  const fdoc = S[`forecasts/${today}`];
+  if (!fdoc) throw new Error(`state chưa có forecasts/${today}`);
+  if (!E.verifyForecastDoc(fdoc)) throw new Error(`hash forecasts/${today} không khớp`);
   const createdAt = nowIso();
-  const fdoc = E.forecastDoc(live, { configVersion: state.configVersion, version: state.version, createdAt,
-    ai: ai ? { headline: ai.headline, assets: ai.assets.length, issues: issues.length } : null, shadow: [...new Set(state.shadow.map((s) => s.exp))] });
-  const docs = { ...state.docs };
-  if (state.dumpVersions[`forecasts/${state.today}`]) throw new Error(`forecasts/${state.today} đã tồn tại: sổ dự báo chỉ thêm, không sửa`);
-  docs[`forecasts/${state.today}`] = fdoc;
-  if (ai) docs[`analyses/${state.today}`] = { schemaVersion: E.SCHEMA_VERSION, date: state.today, version: state.version, source: 'tác vụ định kỳ', ...ai, validation: issues, createdAt };
-  const bundle = readJson(path.join(outDir, 'bundle.pre.json'));
-  bundle.ai = ai ? { date: state.today, ...ai, validation: issues } : null;
-  const latest = {
-    schemaVersion: E.SCHEMA_VERSION, date: state.today, version: state.version, generatedAt: createdAt,
-    champion: state.champions,
-    assets: buildLatestAssets(state),
-    regime: { regions: state.regime.regions, risk: state.regime.risk },
-    ai: ai ? { headline: ai.headline, label: 'AI, chưa kiểm chứng', regime: ai.regime, assets: ai.assets.map((a) => ({ id: a.id, prob_up: a.prob_up, view: a.view, confidence: a.confidence })) } : null,
-    fields: E.LATEST_FIELDS,
-  };
-  docs['public/latest'] = latest;
-  for (const v of state.versionDocs) docs[`versions/${v.version}`] = { schemaVersion: E.SCHEMA_VERSION, ...v };
-  // thứ tự ghi: sổ dự báo trước, trạng thái sau cùng
-  const order = (p) => (p.startsWith('forecasts/') ? 0 : p.startsWith('analyses/') ? 1 : p === 'meta/status' ? 9 : p === 'public/latest' ? 8 : 5);
-  const dumpLike = Object.fromEntries(Object.entries(state.dumpVersions).map(([k, v]) => [k, { version: v }]));
-  const ops = Object.keys(docs).sort((a, b) => order(a) - order(b)).map((p) => setOp(dumpLike, p, docs[p]));
-  const batches = [];
-  for (let i = 0; i < ops.length; i += MAX_OPS_PER_WRITE) batches.push(ops.slice(i, i + MAX_OPS_PER_WRITE));
-  writeJson(path.join(outDir, 'db_writes.json'), { batches, count: ops.length });
-  for (const [i, b] of batches.entries()) writeJson(path.join(outDir, `db_write_${i + 1}.json`), b);
+  const aiRaw = o.ai && o.ai !== true && fs.existsSync(o.ai) ? readJson(o.ai) : null;
+  const { ai, issues } = validateAi(aiRaw, core.live);
+  const analysis = ai ? analysisDoc(ai, issues, { date: today, version: core.version, forecastHash: fdoc.hash, createdAt }) : null;
+
+  // ---- chấm M6 tới hạn
+  const versions = readDbFile(o.versions).data || {};
+  const prevScores = readDbFile(o.aiscores).data;
+  let aiScored = [];
+  const notes = [];
+  if (o.due && o.due !== true && fs.existsSync(o.due)) {
+    const due = readDbFile(o.due).data;
+    const fd = due && S[`forecasts/${due.date}`];
+    if (!due?.date || !due.probs) notes.push('file nhận định tới hạn thiếu date hoặc probs');
+    else if (!fd) notes.push(`không có forecasts/${due.date} để chấm AI`);
+    else if (E.toDay(due.date) + 30 > E.toDay(today)) notes.push(`nhận định ${due.date} chưa tới hạn`);
+    else aiScored = scoreAi(due, fd, E.prepare(loadData(o.data || 'data').raw), E.toDay(today));
+  }
+  const aiScores = updateAiScores(prevScores, aiScored, today);
+  const aiLive = {};
+  for (const g of Object.keys(core.badges)) { const lv = E.liveSkill(aiScores, '1m', g, 'M6'); aiLive[g] = { ...lv, badge: aiBadge(lv) }; }
+  const allLv = E.liveSkill(aiScores, '1m', null, 'M6');
+  aiLive.all = { ...allLv, badge: aiBadge(allLv) };
+
+  // ---- chuỗi nhập tay (chỉ hiển thị, không vào mô hình)
+  const manual = loadManualDir(o.manual).map((m) => ({ id: m.id, name: m.name, unit: m.unit, region: m.region, factor: m.factor,
+    last: m.d?.length ? { date: m.d[m.d.length - 1], value: m.v[m.v.length - 1], confidence: m.src?.[m.src.length - 1]?.confidence || null, sources: m.src?.[m.src.length - 1]?.sources || [] } : null,
+    hist: { d: (m.d || []).slice(-36), v: (m.v || []).slice(-36) } }));
+
+  // ---- file đăng lên artifact
+  core.ai = ai ? { date: today, ...ai, validation: issues, hash: analysis.hash, createdAt } : null;
+  core.aiScores = { live: aiLive, cum: aiScores.cum, intervals: aiScores.intervals['1m'].map((x) => x.fd),
+    recent: aiScored.map((x) => ({ fd: x.fd, a: x.a, g: x.g, y: x.y, ret: x.ret, m6: x.models.M6?.p, m1: x.models.M1?.p })) };
+  core.manual = manual;
+  core.publishedAt = createdAt;
+  latest.ai = ai ? { label: 'AI, chưa kiểm chứng', headline: ai.headline, regime: ai.regime, live: aiLive.all,
+    assets: ai.assets.map((a) => ({ id: a.id, prob_up: a.prob_up, view: a.view, confidence: a.confidence })) } : null;
+  latest.fields = { ...latest.fields, ai: 'Nhận định của Claude (M6): xác suất tăng 30 ngày, quan điểm, độ tự tin. Chỉ để tham khảo cho tới khi kỹ năng trực tiếp so với M1 đạt cửa kiểm chứng (live.badge).' };
+  writeJson(path.join(outDir, 'files', 'data', 'bundle.json'), core);
+  fs.mkdirSync(path.join(outDir, 'files', 'data'), { recursive: true });
+  fs.copyFileSync(path.join(siteDir, 'history.json'), path.join(outDir, 'files', 'data', 'history.json'));
   writeJson(path.join(outDir, 'files', 'data', 'latest.json'), latest);
-  writeJson(path.join(outDir, 'files', 'data', 'bundle.json'), bundle);
-  const msg = report(state, ai, issues);
-  fs.writeFileSync(path.join(outDir, 'message.txt'), msg);
-  console.log(JSON.stringify({ ok: true, ops: ops.length, batches: batches.length, aiIssues: issues, files: ['files/data/latest.json', 'files/data/bundle.json'], message: msg }, null, 1));
+  writeJson(path.join(outDir, 'files', 'ledger', `${today}.json`), fdoc, true);
+
+  // ---- lệnh ghi DB (doc nhỏ); doc đã có cần ifVersion
+  const op = (p, data) => (versions[p] ? { op: 'set', path: p, ifVersion: versions[p], data } : { op: 'set', path: p, data });
+  const ops = [];
+  if (analysis) ops.push({ op: 'set', path: `analyses/${today}`, data: analysis });
+  ops.push(op('scores/ai', aiScores));
+  ops.push(op('public/latest', compactLatest(latest)));
+  ops.push(op('meta/status', {
+    schemaVersion: E.SCHEMA_VERSION, version: core.version, date: today, publishedAt: createdAt, forecastHash: fdoc.hash, analysisHash: analysis?.hash || null,
+    aiIssues: issues, aiScored: aiScored.length, qaIssues: core.qa?.issues || [], actionsRun: core.status?.lastRun?.at || null,
+  }));
+  writeJson(path.join(outDir, 'db_ops.json'), ops);
+  const message = dailyMessage(core, { ai, issues, aiScored, aiLive, S, today });
+  fs.writeFileSync(path.join(outDir, 'message.txt'), `${message}\n`);
+  return { ok: true, today, version: core.version, ops: ops.map((x) => `${x.path}${x.ifVersion ? ` (ifVersion ${x.ifVersion})` : ''}`), opBytes: JSON.stringify(ops).length,
+    aiIssues: issues, aiScored: aiScored.length, notes, files: ['files/data/bundle.json', 'files/data/history.json', 'files/data/latest.json', `files/ledger/${today}.json`], message };
 }
 
-function buildLatestAssets(state) {
-  const by = new Map(state.live.items.map((i) => [`${i.a}|${i.h}`, i]));
-  const ids = [...new Set(state.live.items.map((i) => i.a))];
-  return ids.map((a) => {
-    const i1 = by.get(`${a}|1m`); const i3 = by.get(`${a}|3m`);
-    const b1 = state.badges[(i1 || i3).g]['1m']; const b3 = state.badges[(i1 || i3).g]['3m'];
-    return { id: a, group: (i1 || i3).g, price: (i1 || i3).px, priceDate: (i1 || i3).pd,
-      prob_up_1m: i1?.pc ?? null, prob_up_3m: i3?.pc ?? null, base_1m: i1?.base ?? null, base_3m: i3?.base ?? null,
-      lo_1m: i1?.lo ?? null, hi_1m: i1?.hi ?? null, lo_3m: i3?.lo ?? null, hi_3m: i3?.hi ?? null,
-      prob_tail_1m: i1?.pt ?? null, prob_tail_3m: i3?.pt ?? null, tail_k_1m: i1?.k ?? null, tail_k_3m: i3?.k ?? null,
-      badge_1m: b1.key, badge_3m: b3.key, call_1m: i1?.call ?? 0, call_3m: i3?.call ?? 0, champion_1m: b1.champion, champion_3m: b3.champion,
-      skill_1m: { bss: b1.skill, pBetter: b1.pBetter }, skill_3m: { bss: b3.skill, pBetter: b3.pBetter } };
-  });
+/** public/latest trong DB: bản gọn (bỏ phần giải thích trường, làm tròn số). */
+export function compactLatest(latest) {
+  const { fields, ...rest } = latest;
+  void fields;
+  const rnd = (v) => (typeof v === 'number' ? (Math.abs(v) >= 100 ? Math.round(v * 100) / 100 : r4(v)) : v);
+  return { ...rest, fieldsDoc: 'Giải thích từng trường: khóa fields trong data/latest.json của artifact.',
+    assets: latest.assets.map((a) => Object.fromEntries(Object.entries(a).map(([k, v]) => [k, v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).map(([kk, vv]) => [kk, rnd(vv)])) : rnd(v)]))) };
 }
 
-/** Tin nhắn ≤ 12 dòng cho Mike. */
-function report(state, ai, issues) {
-  const items1 = state.live.items.filter((i) => i.h === '1m');
-  const lines = [];
-  lines.push(`macro-radar 2 · ${viDate(state.today)} · v${state.version}`);
-  const us = state.regime.regions.us;
-  lines.push(`Kịch bản: Mỹ ${us.label.toLowerCase()}; rủi ro ${state.regime.risk.label.toLowerCase()}.`);
-  if (ai?.headline) lines.push(`AI (chưa kiểm chứng): ${ai.headline}`);
-  const sm = state.scoredToday.filter((x) => x.h === '1m');
-  if (sm.length) {
-    const right = sm.filter((x) => (x.models[x.champ]?.p ?? 0.5) > 0.5 === (x.y === 1)).length;
-    const bc = sm.reduce((s, x) => s + (x.models[x.champ]?.b ?? 0), 0) / sm.length;
-    const b1 = sm.reduce((s, x) => s + (x.models.M1?.b ?? 0), 0) / sm.length;
-    lines.push(`Tới hạn 1 tháng (dự báo ${viDate(sm[0].fd)}): đúng hướng ${right}/${sm.length}; Brier ${fmtNum(bc, 3)} so với M1 ${fmtNum(b1, 3)}.`);
-  } else lines.push('Chưa có dự báo trực tiếp nào tới hạn (kỳ 1 tháng tới hạn sau 30 ngày kể từ lần chạy đầu).');
-  const strong = [];
-  for (const [g, hs] of Object.entries(state.badges)) for (const [h, b] of Object.entries(hs)) if (b.key === 'strong') strong.push(`${g} ${h} (${b.champion}, BSS ${fmtNum(b.skill, 3)})`);
-  lines.push(`Kỹ năng đã kiểm chứng: ${strong.length ? strong.join('; ') : 'chưa nhóm nào có cơ sở'}.`);
-  if (state.moves?.length) lines.splice(1, 0, `Thị trường phiên gần nhất: ${state.moves.map((m) => `${m.name} ${m.ch >= 0 ? '+' : '−'}${m.kind === 'yield' ? fmtNum(Math.abs(m.ch) * 100, 0) + ' điểm cơ bản' : fmtPct(Math.abs(m.ch))}`).join(', ')}.`);
-  const notes = [...state.versionEvents.map((e) => e.text), ...(state.optimize && !state.optimize.accepted ? [`Tối ưu: không đổi (${state.optimize.reason})`] : [])];
-  lines.push(notes.length ? `Thay đổi: ${notes.join('; ')} → v${state.version}.` : `Không đổi tham số hay mô hình (v${state.version}).`);
-  const qaIssues = state.docs['meta/status'].qaIssues || [];
-  if (qaIssues.length || state.errors.length) lines.push(`Sự cố số liệu: ${[...qaIssues, ...state.errors].slice(0, 3).join('; ')}`);
-  if (state.manualDue.length) lines.push(`Chờ số Việt Nam: ${state.manualDue.map((m) => m.name).join(', ')}.`);
-  if (ai?.risks?.length) lines.push(`Rủi ro theo dõi: ${ai.risks.slice(0, 2).join('; ')}`);
-  if (issues.length && ai) lines.push(`Nhận định AI bị điều chỉnh ${issues.length} chỗ cho đúng luật.`);
-  lines.push('Công cụ tham khảo, không khuyến nghị mua bán.');
-  return lines.slice(0, 12).join('\n');
+const fmtPct = (x, d = 0) => (x === null || x === undefined || !Number.isFinite(x) ? '–' : `${(x * 100).toFixed(d).replace('.', ',')}%`);
+const fmtNum = (x, d = 3) => (x === null || x === undefined || !Number.isFinite(x) ? '–' : x.toFixed(d).replace('.', ','));
+const viDate = (iso) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
+
+/** Tin nhắn hằng ngày cho Mike, tối đa 12 dòng. */
+export function dailyMessage(core, { ai, issues, aiScored, aiLive, S, today }) {
+  const L = [];
+  const names = Object.fromEntries(core.assets.map((a) => [a.id, a.name]));
+  L.push(`macro-radar 2 · ${viDate(today)}/${today.slice(0, 4)} · v${core.version}`);
+  if (core.moves?.length) L.push(`Phiên gần nhất: ${core.moves.map((m) => `${m.name} ${m.ch >= 0 ? '+' : '−'}${m.kind === 'yield' ? `${Math.round(Math.abs(m.ch) * 100)} điểm cơ bản` : fmtPct(Math.abs(m.ch), 1)}`).join(', ')}.`);
+  const us = core.regime.regions.us;
+  L.push(`Kịch bản: Mỹ ${us.label.charAt(0).toLowerCase()}${us.label.slice(1)}; tâm lý thị trường ${core.regime.risk.label.toLowerCase()}.`);
+  const calls = core.live.filter((i) => i.call !== 0);
+  if (calls.length) L.push(`Nghiêng có cơ sở: ${calls.map((i) => `${names[i.a]} ${i.h === '1m' ? '1 tháng' : '3 tháng'} ${fmtPct(i.pc)} tăng`).join('; ')}.`);
+  const sk = [];
+  for (const [g, hs] of Object.entries(core.badges)) for (const [h, b] of Object.entries(hs)) if (b.key === 'strong') sk.push(`${core.names.groups[g]} ${h === '1m' ? '1 tháng' : '3 tháng'}`);
+  L.push(`Kỹ năng đã kiểm chứng: ${sk.length ? sk.join(', ') : 'chưa nhóm nào'}; nơi khác dùng tần suất lịch sử (M1).`);
+  if (ai?.headline) L.push(`AI (chưa kiểm chứng): ${ai.headline}`);
+  const sc = S[`scores/${today}`];
+  const m1 = (sc?.matured || []).filter((x) => x.h === '1m');
+  if (m1.length) {
+    const right = m1.filter((x) => ((x.models[x.champ]?.p ?? 0.5) > 0.5) === (x.y === 1)).length;
+    const bc = m1.reduce((s, x) => s + (x.models[x.champ]?.b ?? 0), 0) / m1.length;
+    const b1 = m1.reduce((s, x) => s + (x.models.M1?.b ?? 0), 0) / m1.length;
+    L.push(`Tới hạn 1 tháng (dự báo ${viDate(m1[0].fd)}): đúng hướng ${right}/${m1.length}; Brier ${fmtNum(bc)} so với M1 ${fmtNum(b1)}.`);
+  } else L.push('Chưa có dự báo trực tiếp nào tới hạn (kỳ 1 tháng tới hạn 30 ngày sau lần chạy đầu).');
+  if (aiScored.length) L.push(`AI tới hạn: ${aiScored.length} tài sản; tích lũy ${aiLive.all.intervals} khoảng, ${aiLive.all.badge.label.toLowerCase()}.`);
+  const ev = core.runNotes?.versionEvents || [];
+  if (ev.length) L.push(`Thay đổi: ${ev.map((e) => e.text).join('; ')} → v${core.version}.`);
+  else if (core.runNotes?.notes?.length) L.push(core.runNotes.notes.slice(0, 2).join(' '));
+  const qaIssues = [...(core.qa?.issues || []), ...(core.runNotes?.errors || [])];
+  if (qaIssues.length) L.push(`Sự cố số liệu: ${qaIssues.slice(0, 3).join('; ')}.`);
+  if (issues?.length && ai) L.push(`Runner điều chỉnh nhận định AI ở ${issues.length} chỗ cho đúng luật.`);
+  L.push('Công cụ tham khảo, không khuyến nghị mua bán.');
+  while (L.length > 12) L.splice(L.length - 2, 1);
+  return L.join('\n');
 }
 
-// ------------------------------------------------------------------ lệnh manual, rollback
+// ------------------------------------------------------------------ chuỗi nhập tay
 
-function cmdManual(o) {
-  const dump = loadDump(o.dump);
+/** Chuỗi Việt Nam không có API: đọc thông cáo; 2 nguồn khớp ghi "2 nguồn", 1 nguồn ghi rõ. */
+export const MANUAL_SERIES = [
+  { id: 'vn_cpi', name: 'CPI Việt Nam (% so cùng kỳ)', region: 'vn', factor: 'inflation', unit: '%', freq: 'M', releaseDay: 7,
+    hint: 'Cục Thống kê (nso.gov.vn) công bố đầu tháng sau: "CPI tháng X tăng ...% so với cùng kỳ năm trước".' },
+  { id: 'vn_core_cpi', name: 'Lạm phát cơ bản Việt Nam (% so cùng kỳ)', region: 'vn', factor: 'inflation', unit: '%', freq: 'M', releaseDay: 7,
+    hint: 'Cùng thông cáo CPI của Cục Thống kê: "lạm phát cơ bản tháng X tăng ...% so với cùng kỳ".' },
+  { id: 'vn_pmi', name: 'PMI sản xuất Việt Nam (S&P Global)', region: 'vn', factor: 'growth', unit: 'điểm', freq: 'M', releaseDay: 3,
+    hint: 'S&P Global công bố ngày làm việc đầu tháng sau.' },
+  { id: 'vn_refi', name: 'Lãi suất tái cấp vốn NHNN', region: 'vn', factor: 'policy', unit: '%', freq: 'M', releaseDay: 2,
+    hint: 'Ngân hàng Nhà nước (sbv.gov.vn): mức đang áp dụng cuối tháng.' },
+];
+
+/** Chuỗi nhập tay đến hạn: kỳ mới nhất đáng lẽ đã công bố mà chưa có. */
+export function manualDue(docs, today) {
+  const [y, m, d] = today.split('-').map(Number);
+  const due = [];
+  for (const def of MANUAL_SERIES) {
+    const doc = docs.find((x) => x.id === def.id);
+    const last = doc?.d?.length ? doc.d[doc.d.length - 1].slice(0, 7) : null;
+    let py = y; let pm = m - 1;
+    if (d < def.releaseDay) pm -= 1;
+    while (pm < 1) { pm += 12; py -= 1; }
+    const expected = `${py}-${String(pm).padStart(2, '0')}`;
+    if (!last || last < expected) due.push({ id: def.id, name: def.name, period: expected, hint: def.hint, last });
+  }
+  return due;
+}
+
+export function manualEntry(o) {
   const def = MANUAL_SERIES.find((m) => m.id === o.id);
   if (!def) throw new Error(`không có chuỗi nhập tay ${o.id}`);
   const value = Number(String(o.value).replace(',', '.'));
   if (!Number.isFinite(value)) throw new Error('giá trị không hợp lệ');
   if (!/^\d{4}-\d{2}$/.test(o.period || '')) throw new Error('period phải dạng YYYY-MM');
-  const parse = (s) => { if (!s || s === true) return null; const [name, url] = String(s).split('|'); return { name, url }; };
+  const parse = (s) => { if (!s || s === true) return null; const [name, url] = String(s).split('|'); return { name: name.trim(), url: (url || '').trim() }; };
   const sources = [parse(o.src1), parse(o.src2)].filter(Boolean);
-  if (!sources.length) throw new Error('cần ít nhất một nguồn (--src1 "Tên|url")');
-  const key = `manual/${def.id}`;
-  const cur = dump[key]?.data || { schemaVersion: E.SCHEMA_VERSION, ...Object.fromEntries(Object.entries(def).filter(([k]) => !['releaseDay', 'hint'].includes(k))), source: { code: 'manual', name: 'Thông cáo chính thức (nhập tay)', url: '' }, d: [], v: [], src: [] };
+  if (!sources.length) throw new Error('cần ít nhất một nguồn: --src1 "Tên|url"');
+  const cur = readDbFile(o.doc);
+  const doc = cur.data ? clone(cur.data) : { schemaVersion: E.SCHEMA_VERSION, id: def.id, name: def.name, region: def.region, factor: def.factor, unit: def.unit, freq: def.freq,
+    source: { code: 'manual', name: 'Thông cáo chính thức (nhập tay)', url: '' }, d: [], v: [], src: [] };
   const date = `${o.period}-01`;
-  const i = cur.d.indexOf(date);
   const entry = { date, value, sources, confidence: sources.length >= 2 ? '2 nguồn' : '1 nguồn', recordedAt: nowIso() };
-  if (i >= 0) {
-    if (cur.v[i] !== value) entry.revisedFrom = cur.v[i];
-    cur.v[i] = value; cur.src[i] = entry;
-  } else {
-    const k = cur.d.findIndex((d) => d > date);
-    const at = k < 0 ? cur.d.length : k;
-    cur.d.splice(at, 0, date); cur.v.splice(at, 0, value); cur.src.splice(at, 0, entry);
+  const i = doc.d.indexOf(date);
+  if (i >= 0) { if (doc.v[i] !== value) entry.revisedFrom = doc.v[i]; doc.v[i] = value; doc.src[i] = entry; }
+  else {
+    const k = doc.d.findIndex((x) => x > date);
+    const at = k < 0 ? doc.d.length : k;
+    doc.d.splice(at, 0, date); doc.v.splice(at, 0, value); doc.src.splice(at, 0, entry);
   }
-  const op = setOp(dump, key, cur);
-  writeJson(path.join(o.out || 'out', `manual_${def.id}.json`), [op]);
-  console.log(JSON.stringify({ ok: true, write: `manual_${def.id}.json`, confidence: entry.confidence }));
+  const p = `manual/${def.id}`;
+  const ops = [cur.version ? { op: 'set', path: p, ifVersion: cur.version, data: doc } : { op: 'set', path: p, data: doc }];
+  writeJson(path.join(o.out || 'out', `manual_${def.id}.json`), ops);
+  return { ok: true, write: `manual_${def.id}.json`, confidence: entry.confidence, revisedFrom: entry.revisedFrom ?? null };
 }
 
-function cmdRollback(o) {
-  const dump = loadDump(o.dump);
-  const v = dump[`versions/${o.to}`]?.data;
-  if (!v?.snapshot) throw new Error(`thiếu versions/${o.to} trong dump`);
-  const status = structuredClone(dump['meta/status']?.data || {});
-  const cur = dump['config/current']?.data || {};
-  const newVersion = bumpVersion(status.version || INITIAL_VERSION, 'patch');
-  const cfgOut = { schemaVersion: E.SCHEMA_VERSION, configVersion: (cur.configVersion || 1) + 1, updatedAt: vnToday(), config: v.snapshot.config };
-  const reg = structuredClone(dump['models/registry']?.data || {});
-  reg.champion = v.snapshot.champion;
-  reg.history = [...(reg.history || []), { date: vnToday(), event: 'quay lại', to: o.to }];
-  status.version = newVersion;
-  const ops = [setOp(dump, 'config/current', cfgOut), setOp(dump, `config/v${cfgOut.configVersion}`, cfgOut), setOp(dump, 'models/registry', reg),
-    setOp(dump, `versions/${newVersion}`, { schemaVersion: E.SCHEMA_VERSION, version: newVersion, date: vnToday(), events: [{ kind: 'patch', type: 'rollback', text: `Quay lại cấu hình và nhà vô địch của ${o.to}` }], snapshot: v.snapshot }),
-    setOp(dump, 'meta/status', status)];
-  writeJson(path.join(o.out || 'out', 'rollback.json'), ops);
-  console.log(JSON.stringify({ ok: true, version: newVersion, ops: ops.length }));
+// ------------------------------------------------------------------ status, rollback, propose, raw
+
+export function statusReport(o) {
+  const today = o.today || vnToday();
+  const S = loadState(o.state || 'state');
+  const st = S['meta/status'] || {};
+  const siteF = path.join(o.site || 'site', 'bundle.json');
+  const core = fs.existsSync(siteF) ? readJson(siteF) : null;
+  const dueDate = E.fromDay(E.toDay(today) - 30);
+  return {
+    ok: !!S[`forecasts/${today}`] && core?.date === today, today, forecastReady: !!S[`forecasts/${today}`], siteDate: core?.date || null,
+    version: st.version || null, lastRun: st.lastRun ? { at: st.lastRun.at, errors: st.lastRun.errors, weekly: st.lastRun.weekly, monthly: st.lastRun.monthly } : null,
+    aiDue: S[`forecasts/${dueDate}`] ? dueDate : null, manualDue: manualDue(loadManualDir(o.manual), today), weekday: weekday(today), qaIssues: st.qaIssues || [],
+  };
+}
+
+export function rollback(o) {
+  const S = loadState(o.state || 'state');
+  const v = S[`versions/${o.to}`];
+  if (!v?.snapshot) throw new Error(`không có versions/${o.to} hoặc bản này không có snapshot`);
+  const today = o.today || vnToday();
+  const status = clone(S['meta/status']) || {};
+  const cur = S['config/current'] || {};
+  const version = bumpVersion(status.version || INITIAL_VERSION, 'patch');
+  const configVersion = (cur.configVersion || 1) + 1;
+  const cfgOut = { schemaVersion: E.SCHEMA_VERSION, configVersion, updatedAt: today, config: v.snapshot.config };
+  const reg = clone(S['models/registry']) || { champion: {}, history: [] };
+  reg.champion = clone(v.snapshot.champion);
+  reg.history = [...(reg.history || []), { date: today, event: 'quay lại', to: o.to, version }];
+  const from = status.version || null;
+  status.version = version;
+  saveState(o.state || 'state', {
+    'config/current': cfgOut, [`config/v${configVersion}`]: cfgOut, 'models/registry': { ...reg, updatedAt: today },
+    [`versions/${version}`]: { schemaVersion: E.SCHEMA_VERSION, version, date: today, from,
+      events: [{ kind: 'patch', type: 'rollback', text: `Quay lại cấu hình và nhà vô địch của ${o.to}` }], snapshot: { ...v.snapshot, configVersion } },
+    'meta/status': status,
+  });
+  return { ok: true, version, to: o.to, configVersion };
+}
+
+export function propose(o) {
+  let override;
+  try { override = JSON.parse(o.override); } catch { throw new Error('override phải là JSON hợp lệ'); }
+  if (!override || typeof override !== 'object' || Array.isArray(override)) throw new Error('override phải là một object JSON');
+  const allowed = new Set(['params', 'features', 'bandMethod', 'riskBandMultiplier', 'pool']);
+  for (const k of Object.keys(override)) if (!allowed.has(k)) throw new Error(`không cho phép đổi khóa ${k} qua đề xuất`);
+  for (const [k, val] of Object.entries(override.params || {})) {
+    const spec = E.PARAM_SPECS.find((s) => s.key === k);
+    if (!spec) throw new Error(`tham số lạ: ${k}`);
+    if (!(val >= spec.hard[0] && val <= spec.hard[1])) throw new Error(`${k} = ${val} ngoài khoảng cứng ${spec.hard.join('–')}`);
+  }
+  const today = o.today || vnToday();
+  const S = loadState(o.state || 'state');
+  let n = 1;
+  while (S[`experiments/exp-u${today.replace(/-/g, '')}-${n}`]) n++;
+  const id = `exp-u${today.replace(/-/g, '')}-${n}`;
+  saveState(o.state || 'state', { [`experiments/${id}`]: { schemaVersion: E.SCHEMA_VERSION, id, title: String(o.title || 'Đề xuất của Mike').slice(0, 120),
+    hypothesis: String(o.hypothesis || '').slice(0, 500), override, status: 'proposed', createdAt: today, source: 'đề xuất từ trang', history: [{ date: today, status: 'proposed' }] } });
+  return { ok: true, id };
+}
+
+/** Số liệu thô gọn cho bàn thử cấu hình trong trình duyệt. */
+export function rawBundle(o) {
+  const { raw } = loadData(o.data || 'data');
+  const keepA = ['schemaVersion', 'id', 'name', 'group', 'kind', 'unit', 'forecast', 'source', 'quarantine', 'd', 'c'];
+  const keepS = ['schemaVersion', 'id', 'name', 'region', 'factor', 'sign', 'transform', 'unit', 'freq', 'pubLagDays', 'source', 'periodEnd', 'd', 'v'];
+  const pick = (x, keys) => Object.fromEntries(keys.filter((k) => k in x).map((k) => [k, x[k]]));
+  const f = o.out || 'out/files/data/raw.json';
+  writeJson(f, { schemaVersion: E.SCHEMA_VERSION, assets: raw.assets.map((a) => pick(a, keepA)), series: raw.series.map((s) => pick(s, keepS)) });
+  return { ok: true, file: f, bytes: fs.statSync(f).size };
 }
 
 // ------------------------------------------------------------------ main
 
-const o = args(process.argv.slice(2));
-const cmd = o._[0];
-try {
-  if (cmd === 'fetch') cmdFetch(o);
-  else if (cmd === 'plan') cmdPlan(o);
-  else if (cmd === 'run') cmdRun(o);
-  else if (cmd === 'finalize') cmdFinalize(o);
-  else if (cmd === 'manual') cmdManual(o);
-  else if (cmd === 'rollback') cmdRollback(o);
-  else {
-    console.log('Dùng: node tools/mrc.mjs fetch|plan|run|finalize|manual|rollback ... (xem đầu file)');
-    process.exitCode = cmd ? 1 : 0;
+const COMMANDS = { daily, ai: aiLayer, status: statusReport, manual: manualEntry, rollback, propose, raw: rawBundle };
+
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
+if (isMain) {
+  const o = parseArgs(process.argv.slice(2));
+  const fn = COMMANDS[o._[0]];
+  if (!fn) {
+    console.log(`Dùng: node tools/mrc.mjs ${Object.keys(COMMANDS).join('|')} ... (xem đầu file)`);
+    process.exitCode = o._[0] ? 1 : 0;
+  } else {
+    try {
+      console.log(JSON.stringify(fn(o), null, 1));
+    } catch (e) {
+      console.error(JSON.stringify({ ok: false, error: e.message, stack: e.stack?.split('\n').slice(0, 5) }));
+      process.exitCode = 1;
+    }
   }
-} catch (e) {
-  console.error(JSON.stringify({ ok: false, error: e.message, stack: e.stack?.split('\n').slice(0, 4) }));
-  process.exitCode = 1;
 }

@@ -1,0 +1,41 @@
+name: rollback
+# Quay lại cấu hình và nhà vô địch của một version cũ. Chạy tay: Actions → rollback → Run workflow.
+# Lần dự báo kế tiếp (sáng hôm sau, hoặc chạy tay prices-daily) dùng cấu hình đã quay lại.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version muốn quay lại, ví dụ 2.0.1 (xem tab Nhật ký của artifact)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: data
+  cancel-in-progress: false
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Quay lại
+        env:
+          TARGET: ${{ inputs.version }}
+        run: |
+          if ! [[ "$TARGET" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]]; then echo "Version không hợp lệ: $TARGET"; exit 1; fi
+          node tools/mrc.mjs rollback --state state --to "$TARGET" | tee /tmp/rollback.json
+      - name: Ghi vào repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state
+          git commit -q -m "rollback: $(node -e "const j=JSON.parse(require('fs').readFileSync('/tmp/rollback.json','utf8')); console.log('quay lại ' + j.to + ' → v' + j.version)")"
+          for i in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && break; sleep 7; done

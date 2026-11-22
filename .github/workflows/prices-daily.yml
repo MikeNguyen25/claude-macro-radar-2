@@ -1,5 +1,6 @@
 name: prices-daily
-# Giá 14 tài sản, VIX, DXY: sau khi nến ngày UTC của crypto khép, trước tác vụ 07:40
+# Giá 14 tài sản, VIX, DXY; rồi dự báo hằng ngày (sổ dự báo bất biến, chấm điểm, phép thử, quyết định tháng)
+# trước tác vụ 07:40 của Claude. Sổ dự báo ghi một lần mỗi ngày: lần chạy sau trong ngày bỏ qua.
 
 on:
   schedule:
@@ -26,6 +27,7 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install --quiet "requests>=2.32,<3"
       - name: Cập nhật số liệu (prices)
+        id: update
         timeout-minutes: 20
         run: python jobs/update.py --mode prices --out data
       - name: Ghi vào repo
@@ -37,3 +39,21 @@ jobs:
           if git diff --cached --quiet; then echo "Không có thay đổi"; exit 0; fi
           git commit -q -m "data: prices $(date -u +%Y-%m-%dT%H:%MZ)"
           for i in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && break; sleep 7; done
+      - uses: actions/setup-node@v4
+        if: always()
+        with:
+          node-version: "22"
+      - name: Dự báo hằng ngày
+        id: forecast
+        # lần 07:09 và 07:29 chỉ dự báo khi cập nhật giá thành công; lần 07:52 và chạy tay thì dự báo với số đang có
+        if: always() && (steps.update.outcome == 'success' || github.event.schedule == '52 0 * * *' || github.event_name == 'workflow_dispatch')
+        timeout-minutes: 15
+        run: node tools/mrc.mjs daily --data data --state state --site site | tee /tmp/daily.json
+      - name: Ghi dự báo vào repo
+        if: always() && steps.forecast.outcome == 'success'
+        run: |
+          git add state site
+          if git diff --cached --quiet; then echo "Không có thay đổi"; exit 0; fi
+          msg=$(node -e "const j=JSON.parse(require('fs').readFileSync('/tmp/daily.json','utf8')); console.log('forecast: ' + j.today + ' v' + j.version + (j.versionEvents.length ? ' · ' + j.versionEvents.join('; ') : '') + (j.errors.length ? ' · lỗi: ' + j.errors.length : ''))")
+          git commit -q -m "$msg"
+          for i in 1 2 3 4 5; do git pull -q --rebase origin main && git push -q origin HEAD:main && break; sleep 9; done

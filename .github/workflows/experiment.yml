@@ -1,0 +1,49 @@
+name: experiment
+# Đề xuất một phép thử (giả thuyết). Phép thử được kiểm định ở lần chạy Chủ nhật kế tiếp,
+# qua đủ cửa mới chạy song song (shadow) và chỉ lên ngôi ở quyết định hằng tháng.
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: "Tên ngắn của giả thuyết"
+        required: true
+        type: string
+      override:
+        description: 'Thay đổi cấu hình dạng JSON, ví dụ {"params":{"tDof":7}} (trang Phương pháp có nút sao chép)'
+        required: true
+        type: string
+      hypothesis:
+        description: "Vì sao nghĩ thay đổi này giúp dự báo tốt hơn"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: data
+  cancel-in-progress: false
+
+jobs:
+  propose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Ghi đề xuất
+        env:
+          TITLE: ${{ inputs.title }}
+          OVERRIDE: ${{ inputs.override }}
+          HYP: ${{ inputs.hypothesis }}
+        run: node tools/mrc.mjs propose --state state --title "$TITLE" --override "$OVERRIDE" --hypothesis "$HYP" | tee /tmp/propose.json
+      - name: Ghi vào repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state
+          git commit -q -m "experiment: $(node -e "console.log(JSON.parse(require('fs').readFileSync('/tmp/propose.json','utf8')).id)") đề xuất"
+          for i in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && break; sleep 7; done
