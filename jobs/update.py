@@ -669,12 +669,15 @@ def process_series(s: dict, out_dir: str, rev_log: list) -> dict:
     return qa
 
 
-def write_if_changed(path: str, doc: dict, keys_ignore=()) -> bool:
+def write_if_changed(path: str, doc, keys_ignore=()) -> bool:
     """Chỉ ghi khi nội dung (trừ các khóa bỏ qua) thay đổi, để lịch sử git gọn."""
     old = load_json(path)
     if old is not None:
-        a = {k: v for k, v in old.items() if k not in keys_ignore}
-        b = {k: v for k, v in doc.items() if k not in keys_ignore}
+        if isinstance(old, dict) and isinstance(doc, dict):
+            a = {k: v for k, v in old.items() if k not in keys_ignore}
+            b = {k: v for k, v in doc.items() if k not in keys_ignore}
+        else:  # nhật ký sửa số là danh sách
+            a, b = old, doc
         if a == b:
             return False
     os.makedirs(os.path.dirname(path), exist_ok=True)
