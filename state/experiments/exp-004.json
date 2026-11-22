@@ -1,0 +1,17 @@
+{
+ "schemaVersion": 1,
+ "id": "exp-004",
+ "title": "Vùng giá nở theo VIX",
+ "hypothesis": "Khi VIX cao hơn bình thường, độ rộng vùng giá cần tăng thêm.",
+ "override": {
+  "riskBandMultiplier": 0.1
+ },
+ "status": "proposed",
+ "createdAt": "2026-11-22",
+ "history": [
+  {
+   "date": "2026-11-22",
+   "status": "proposed"
+  }
+ ]
+}

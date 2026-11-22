@@ -1,0 +1,19 @@
+{
+ "schemaVersion": 1,
+ "id": "exp-005",
+ "title": "Tổ hợp tin M1 ít hơn",
+ "hypothesis": "Giảm tỷ trọng tối thiểu của M1 trong M5 từ 50% xuống 30%.",
+ "override": {
+  "params": {
+   "ensembleShrink": 0.3
+  }
+ },
+ "status": "proposed",
+ "createdAt": "2026-11-22",
+ "history": [
+  {
+   "date": "2026-11-22",
+   "status": "proposed"
+  }
+ ]
+}

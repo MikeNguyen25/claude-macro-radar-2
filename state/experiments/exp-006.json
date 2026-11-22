@@ -1,0 +1,28 @@
+{
+ "schemaVersion": 1,
+ "id": "exp-006",
+ "title": "Việt Nam dùng xuất khẩu",
+ "hypothesis": "Tăng trưởng xuất khẩu Việt Nam (vn.growth) giúp dự báo VN-Index.",
+ "override": {
+  "features": {
+   "M3": {
+    "vn": [
+     "world.growth",
+     "cn.growth",
+     "us.fincond",
+     "us.usd",
+     "vn.fx",
+     "vn.growth"
+    ]
+   }
+  }
+ },
+ "status": "proposed",
+ "createdAt": "2026-11-22",
+ "history": [
+  {
+   "date": "2026-11-22",
+   "status": "proposed"
+  }
+ ]
+}

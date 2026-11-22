@@ -1,0 +1,77 @@
+{
+ "schemaVersion": 1,
+ "champion": {
+  "us_eq": {
+   "1m": "M1",
+   "3m": "M1"
+  },
+  "sea": {
+   "1m": "M1",
+   "3m": "M1"
+  },
+  "cmd_fx": {
+   "1m": "M1",
+   "3m": "M5"
+  },
+  "vn": {
+   "1m": "M1",
+   "3m": "M1"
+  },
+  "crypto": {
+   "1m": "M1",
+   "3m": "M1"
+  }
+ },
+ "previous": {},
+ "reasons": {
+  "us_eq": {
+   "1m": "không ứng viên nào đạt p_better ≥ 0.95 và tốt hơn M1 ở cả hai nửa",
+   "3m": "không ứng viên nào đạt p_better ≥ 0.95 và tốt hơn M1 ở cả hai nửa"
+  },
+  "sea": {
+   "1m": "không ứng viên nào đạt p_better ≥ 0.95 và tốt hơn M1 ở cả hai nửa",
+   "3m": "không ứng viên nào đạt p_better ≥ 0.95 và tốt hơn M1 ở cả hai nửa"
+  },
+  "cmd_fx": {
+   "1m": "không ứng viên nào đạt p_better ≥ 0.95 và tốt hơn M1 ở cả hai nửa",
+   "3m": "p_better 0.9935 ≥ 0.95, tốt hơn M1 ở cả hai nửa và tập kiểm tra"
+  },
+  "vn": {
+   "1m": "không ứng viên nào đạt p_better ≥ 0.95 và tốt hơn M1 ở cả hai nửa",
+   "3m": "không ứng viên nào đạt p_better ≥ 0.95 và tốt hơn M1 ở cả hai nửa"
+  },
+  "crypto": {
+   "1m": "không ứng viên nào đạt p_better ≥ 0.95 và tốt hơn M1 ở cả hai nửa",
+   "3m": "không ứng viên nào đạt p_better ≥ 0.95 và tốt hơn M1 ở cả hai nửa"
+  }
+ },
+ "history": [
+  {
+   "date": "2026-11-22",
+   "event": "khởi tạo",
+   "champion": {
+    "us_eq": {
+     "1m": "M1",
+     "3m": "M1"
+    },
+    "sea": {
+     "1m": "M1",
+     "3m": "M1"
+    },
+    "cmd_fx": {
+     "1m": "M1",
+     "3m": "M5"
+    },
+    "vn": {
+     "1m": "M1",
+     "3m": "M1"
+    },
+    "crypto": {
+     "1m": "M1",
+     "3m": "M1"
+    }
+   }
+  }
+ ],
+ "updatedAt": "2026-11-22"
+}

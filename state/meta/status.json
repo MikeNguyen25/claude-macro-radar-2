@@ -1,0 +1,61 @@
+{
+ "schemaVersion": 1,
+ "pending": {
+  "1m": [
+   "2026-11-22"
+  ],
+  "3m": [
+   "2026-11-22"
+  ]
+ },
+ "p7Pending": [
+  "2026-11-22"
+ ],
+ "lastWeekly": "2026-11-22",
+ "lastMonthly": "2026-11",
+ "version": "2.0.0",
+ "engineVersion": "2.0.0",
+ "lastRun": {
+  "date": "2026-11-22",
+  "at": "2026-11-22T10:47:40Z",
+  "ms": 1298,
+  "scored": 0,
+  "p7": 0,
+  "waiting": 0,
+  "weekly": true,
+  "monthly": false,
+  "errors": [],
+  "notes": [
+   "Phép thử exp-001 (Xu hướng chỉ dùng 3 và 12 tháng): trượt.",
+   "Phép thử exp-002 (Vĩ mô thêm độ dốc lợi suất): trượt.",
+   "Phép thử exp-003 (Vùng giá bootstrap phần dư): trượt."
+  ]
+ },
+ "ledger": [
+  {
+   "date": "2026-11-22",
+   "hash": "a1c854badb0bd24b6303781aab7bee37d6dbabb878434d93aa2c9bbb4393e623",
+   "version": "2.0.0",
+   "configVersion": 1
+  }
+ ],
+ "dataAsOf": {
+  "brent": "2026-11-20",
+  "btc": "2026-11-21",
+  "doge": "2026-11-21",
+  "eth": "2026-11-21",
+  "gold": "2026-11-21",
+  "ndq": "2026-11-19",
+  "set": "2026-11-20",
+  "sol": "2026-11-21",
+  "spx": "2026-11-20",
+  "sti": "2026-11-20",
+  "trx": "2026-11-21",
+  "usdvnd": "2026-11-20",
+  "ust10y": "2026-11-19",
+  "vni": "2026-11-20"
+ },
+ "qaIssues": [
+  "vn_ip: số cũ 631 ngày"
+ ]
+}

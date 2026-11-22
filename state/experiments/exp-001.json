@@ -1,0 +1,157 @@
+{
+ "schemaVersion": 1,
+ "id": "exp-001",
+ "title": "Xu hướng chỉ dùng 3 và 12 tháng",
+ "hypothesis": "Biến động 1 tháng gây nhiễu; bỏ r1 khỏi M2 làm M2 tốt hơn.",
+ "override": {
+  "features": {
+   "M2": [
+    "r3",
+    "r12",
+    "dsma"
+   ]
+  }
+ },
+ "status": "rejected",
+ "createdAt": "2026-11-22",
+ "history": [
+  {
+   "date": "2026-11-22",
+   "status": "proposed"
+  },
+  {
+   "date": "2026-11-22",
+   "status": "rejected",
+   "reason": "không nhóm nào vừa đạt p_better ≥ 0.9 so với M1, vừa tốt hơn chính mô hình đó ở cấu hình hiện hành và tốt hơn nhà vô địch ở cả hai nửa giai đoạn"
+  }
+ ],
+ "testedAt": "2026-11-22",
+ "result": {
+  "status": "rejected",
+  "threshold": 0.9,
+  "passed": [],
+  "details": {
+   "us_eq": {
+    "1m": {
+     "model": "M5",
+     "skill": 0.00988,
+     "pBetter": 0.819,
+     "improvesOverBase": true,
+     "champion": "M1",
+     "championSkill": 0,
+     "ece": 0.054,
+     "coverage": 0.8185,
+     "ok": false
+    },
+    "3m": {
+     "model": "M5",
+     "skill": 0.02526,
+     "pBetter": 0.8675,
+     "improvesOverBase": false,
+     "champion": "M1",
+     "championSkill": 0,
+     "ece": 0.0764,
+     "coverage": 0.8188,
+     "ok": false
+    }
+   },
+   "sea": {
+    "1m": {
+     "model": "M5",
+     "skill": -0.00123,
+     "pBetter": 0.422,
+     "improvesOverBase": false,
+     "champion": "M1",
+     "championSkill": 0,
+     "ece": 0.0286,
+     "coverage": 0.7997,
+     "ok": false
+    },
+    "3m": {
+     "model": "M2",
+     "skill": 0.00617,
+     "pBetter": 0.625,
+     "improvesOverBase": false,
+     "champion": "M1",
+     "championSkill": 0,
+     "ece": 0.1018,
+     "coverage": 0.822,
+     "ok": false
+    }
+   },
+   "cmd_fx": {
+    "1m": {
+     "model": "M5",
+     "skill": 0.01966,
+     "pBetter": 1,
+     "improvesOverBase": false,
+     "champion": "M1",
+     "championSkill": 0,
+     "ece": 0.0213,
+     "coverage": 0.8009,
+     "ok": false
+    },
+    "3m": {
+     "model": "M5",
+     "skill": 0.03328,
+     "pBetter": 0.9935,
+     "improvesOverBase": false,
+     "champion": "M5",
+     "championSkill": 0.03318,
+     "ece": 0.0505,
+     "coverage": 0.7893,
+     "ok": false
+    }
+   },
+   "vn": {
+    "1m": {
+     "model": "M5",
+     "skill": 0.01602,
+     "pBetter": 0.897,
+     "improvesOverBase": false,
+     "champion": "M1",
+     "championSkill": 0,
+     "ece": 0.0403,
+     "coverage": 0.7976,
+     "ok": false
+    },
+    "3m": {
+     "model": "M4",
+     "skill": 0.01588,
+     "pBetter": 0.6675,
+     "improvesOverBase": false,
+     "champion": "M1",
+     "championSkill": 0,
+     "ece": 0.0649,
+     "coverage": 0.788,
+     "ok": false
+    }
+   },
+   "crypto": {
+    "1m": {
+     "model": "M3",
+     "skill": 0.0023,
+     "pBetter": 0.5925,
+     "improvesOverBase": false,
+     "champion": "M1",
+     "championSkill": 0,
+     "ece": 0.0345,
+     "coverage": 0.8166,
+     "ok": false
+    },
+    "3m": {
+     "model": "M5",
+     "skill": -0.00448,
+     "pBetter": 0.3425,
+     "improvesOverBase": false,
+     "champion": "M1",
+     "championSkill": 0,
+     "ece": 0.043,
+     "coverage": 0.8239,
+     "ok": false
+    }
+   }
+  },
+  "reason": "không nhóm nào vừa đạt p_better ≥ 0.9 so với M1, vừa tốt hơn chính mô hình đó ở cấu hình hiện hành và tốt hơn nhà vô địch ở cả hai nửa giai đoạn"
+ }
+}

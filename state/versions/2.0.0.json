@@ -1,0 +1,170 @@
+{
+ "schemaVersion": 1,
+ "version": "2.0.0",
+ "date": "2026-11-22",
+ "from": null,
+ "events": [
+  {
+   "kind": "init",
+   "type": "init",
+   "text": "Khởi tạo macro-radar 2: M1 làm nhà vô địch ở nơi chưa ứng viên nào qua cửa kiểm định."
+  }
+ ],
+ "snapshot": {
+  "config": {
+   "tail": {
+    "brent": {
+     "1m": 0.095,
+     "3m": 0.165
+    },
+    "us_eq": {
+     "1m": 0.06,
+     "3m": 0.085
+    },
+    "sea": {
+     "1m": 0.05,
+     "3m": 0.08
+    },
+    "usdvnd": {
+     "1m": 0.005,
+     "3m": 0.005
+    },
+    "ust10y": {
+     "1m": 0.3,
+     "3m": 0.5
+    },
+    "gold": {
+     "1m": 0.045,
+     "3m": 0.055
+    },
+    "vn": {
+     "1m": 0.065,
+     "3m": 0.115
+    },
+    "crypto": {
+     "1m": 0.225,
+     "3m": 0.425
+    }
+   }
+  },
+  "configVersion": 1,
+  "champion": {
+   "us_eq": {
+    "1m": "M1",
+    "3m": "M1"
+   },
+   "sea": {
+    "1m": "M1",
+    "3m": "M1"
+   },
+   "cmd_fx": {
+    "1m": "M1",
+    "3m": "M5"
+   },
+   "vn": {
+    "1m": "M1",
+    "3m": "M1"
+   },
+   "crypto": {
+    "1m": "M1",
+    "3m": "M1"
+   }
+  }
+ },
+ "metrics": {
+  "1m": {
+   "us_eq": {
+    "champion": "M1",
+    "brier": 0.23953,
+    "skill": 0,
+    "pBetter": 0.5,
+    "ece": 0.0847,
+    "coverage": 0.8185,
+    "tailSkill": 0.0912
+   },
+   "sea": {
+    "champion": "M1",
+    "brier": 0.24713,
+    "skill": 0,
+    "pBetter": 0.5,
+    "ece": 0.0189,
+    "coverage": 0.7997,
+    "tailSkill": 0.00693
+   },
+   "cmd_fx": {
+    "champion": "M1",
+    "brier": 0.25307,
+    "skill": 0,
+    "pBetter": 0.5,
+    "ece": 0.0573,
+    "coverage": 0.8009,
+    "tailSkill": 0.03993
+   },
+   "vn": {
+    "champion": "M1",
+    "brier": 0.25524,
+    "skill": 0,
+    "pBetter": 0.5,
+    "ece": 0.0874,
+    "coverage": 0.7976,
+    "tailSkill": 0.02685
+   },
+   "crypto": {
+    "champion": "M1",
+    "brier": 0.25326,
+    "skill": 0,
+    "pBetter": 0.5,
+    "ece": 0.0331,
+    "coverage": 0.8166,
+    "tailSkill": 0.02062
+   }
+  },
+  "3m": {
+   "us_eq": {
+    "champion": "M1",
+    "brier": 0.2272,
+    "skill": 0,
+    "pBetter": 0.5,
+    "ece": 0.1355,
+    "coverage": 0.8188,
+    "tailSkill": 0.06794
+   },
+   "sea": {
+    "champion": "M1",
+    "brier": 0.24908,
+    "skill": 0,
+    "pBetter": 0.5,
+    "ece": 0.0823,
+    "coverage": 0.822,
+    "tailSkill": 0.01342
+   },
+   "cmd_fx": {
+    "champion": "M5",
+    "brier": 0.2378,
+    "skill": 0.03318,
+    "pBetter": 0.9935,
+    "ece": 0.0518,
+    "coverage": 0.7893,
+    "tailSkill": 0.02638
+   },
+   "vn": {
+    "champion": "M1",
+    "brier": 0.25176,
+    "skill": 0,
+    "pBetter": 0.5,
+    "ece": 0.0754,
+    "coverage": 0.788,
+    "tailSkill": 0.02408
+   },
+   "crypto": {
+    "champion": "M1",
+    "brier": 0.25478,
+    "skill": 0,
+    "pBetter": 0.5,
+    "ece": 0.0863,
+    "coverage": 0.8239,
+    "tailSkill": 0.00303
+   }
+  }
+ }
+}
