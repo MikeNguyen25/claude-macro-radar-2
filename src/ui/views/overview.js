@@ -32,7 +32,7 @@ function regimeCard(c) {
       <tbody>${rows}</tbody></table></div>
     <p>Tâm lý thị trường: <b>${risk.label}</b> <span class="muted">(điểm rủi ro ${F.num(risk.score, 2)}; trên 0,5 là né rủi ro, dưới −0,25 là ưa rủi ro)</span></p>
     ${calls.length
-      ? h`<p>Nghiêng có cơ sở: ${calls.map((i, k) => h`${k ? '; ' : ''}<a href="#tai-san-${i.a}">${byId(i.a)?.name}</a> ${F.HZ[i.h]} ${F.pct(i.pc)} tăng`)}.</p>`
+      ? h`<p>Nghiêng có cơ sở: ${calls.map((i, k) => h`${k ? '; ' : ''}<a href="#tai-san-${i.a}">${byId(i.a)?.name}</a> ${F.HZ[i.h]} ${F.pct(i.pc)} tăng <span class="muted">(thường lệ ${F.pct(i.base)})</span>`)}.</p>`
       : h`<p class="muted">Chưa tài sản nào có xác suất vừa đủ cơ sở vừa cách 50% từ 5 điểm trở lên.</p>`}
     ${c.ai?.headline ? h`<div class="callout"><span class="tag">${AI_LABEL}</span> ${c.ai.headline} <a href="#ai">Xem nhận định</a></div>` : ''}
   </section>`;

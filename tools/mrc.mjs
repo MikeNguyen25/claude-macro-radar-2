@@ -21,8 +21,9 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import * as E from '../src/engine/index.mjs';
 import { validateAi, analysisDoc, verifyAnalysisDoc, aiBadge, AI_MAX_DEV } from '../src/engine/ai.mjs';
+import { MANUAL_SERIES, manualDue } from '../src/engine/manual.mjs';
 
-export { validateAi, analysisDoc, verifyAnalysisDoc, aiBadge };
+export { validateAi, analysisDoc, verifyAnalysisDoc, aiBadge, MANUAL_SERIES, manualDue };
 
 export const INITIAL_VERSION = '2.0.0';
 export const REPO = 'MikeNguyen25/claude-macro-radar-2';
@@ -661,7 +662,7 @@ export function dailyMessage(core, { ai, issues, aiScored, aiLive, S, today }) {
   const us = core.regime.regions.us;
   L.push(`Kịch bản: Mỹ ${us.label.charAt(0).toLowerCase()}${us.label.slice(1)}; tâm lý thị trường ${core.regime.risk.label.toLowerCase()}.`);
   const calls = core.live.filter((i) => i.call !== 0);
-  if (calls.length) L.push(`Nghiêng có cơ sở: ${calls.map((i) => `${names[i.a]} ${i.h === '1m' ? '1 tháng' : '3 tháng'} ${fmtPct(i.pc)} tăng`).join('; ')}.`);
+  if (calls.length) L.push(`Nghiêng có cơ sở: ${calls.map((i) => `${names[i.a]} ${i.h === '1m' ? '1 tháng' : '3 tháng'} ${fmtPct(i.pc)} tăng (thường lệ ${fmtPct(i.base)})`).join('; ')}.`);
   const sk = [];
   for (const [g, hs] of Object.entries(core.badges)) for (const [h, b] of Object.entries(hs)) if (b.key === 'strong') sk.push(`${core.names.groups[g]} ${h === '1m' ? '1 tháng' : '3 tháng'}`);
   L.push(`Kỹ năng đã kiểm chứng: ${sk.length ? sk.join(', ') : 'chưa nhóm nào'}; nơi khác dùng tần suất lịch sử (M1).`);
@@ -677,7 +678,15 @@ export function dailyMessage(core, { ai, issues, aiScored, aiLive, S, today }) {
   if (aiScored.length) L.push(`AI tới hạn: ${aiScored.length} tài sản; tích lũy ${aiLive.all.intervals} khoảng, ${aiLive.all.badge.label.toLowerCase()}.`);
   const ev = core.runNotes?.versionEvents || [];
   if (ev.length) L.push(`Thay đổi: ${ev.map((e) => e.text).join('; ')} → v${core.version}.`);
-  else if (core.runNotes?.notes?.length) L.push(core.runNotes.notes.slice(0, 2).join(' '));
+  else if (core.runNotes?.notes?.length) {
+    const exps = core.runNotes.notes.filter((n) => n.startsWith('Phép thử'));
+    const rest = core.runNotes.notes.filter((n) => !n.startsWith('Phép thử'));
+    if (exps.length) {
+      const pass = exps.filter((n) => n.includes('qua cửa')).length;
+      L.push(`Phép thử tuần này: ${exps.length} giả thuyết, ${pass} qua cửa kiểm định${pass ? ' (chạy song song)' : ''}, ${exps.length - pass} trượt.`);
+    }
+    if (rest.length) L.push(rest.slice(0, 1).join(' '));
+  }
   const qaIssues = [...(core.qa?.issues || []), ...(core.runNotes?.errors || [])];
   if (qaIssues.length) L.push(`Sự cố số liệu: ${qaIssues.slice(0, 3).join('; ')}.`);
   if (issues?.length && ai) L.push(`Runner điều chỉnh nhận định AI ở ${issues.length} chỗ cho đúng luật.`);
@@ -687,34 +696,6 @@ export function dailyMessage(core, { ai, issues, aiScored, aiLive, S, today }) {
 }
 
 // ------------------------------------------------------------------ chuỗi nhập tay
-
-/** Chuỗi Việt Nam không có API: đọc thông cáo; 2 nguồn khớp ghi "2 nguồn", 1 nguồn ghi rõ. */
-export const MANUAL_SERIES = [
-  { id: 'vn_cpi', name: 'CPI Việt Nam (% so cùng kỳ)', region: 'vn', factor: 'inflation', unit: '%', freq: 'M', releaseDay: 7,
-    hint: 'Cục Thống kê (nso.gov.vn) công bố đầu tháng sau: "CPI tháng X tăng ...% so với cùng kỳ năm trước".' },
-  { id: 'vn_core_cpi', name: 'Lạm phát cơ bản Việt Nam (% so cùng kỳ)', region: 'vn', factor: 'inflation', unit: '%', freq: 'M', releaseDay: 7,
-    hint: 'Cùng thông cáo CPI của Cục Thống kê: "lạm phát cơ bản tháng X tăng ...% so với cùng kỳ".' },
-  { id: 'vn_pmi', name: 'PMI sản xuất Việt Nam (S&P Global)', region: 'vn', factor: 'growth', unit: 'điểm', freq: 'M', releaseDay: 3,
-    hint: 'S&P Global công bố ngày làm việc đầu tháng sau.' },
-  { id: 'vn_refi', name: 'Lãi suất tái cấp vốn NHNN', region: 'vn', factor: 'policy', unit: '%', freq: 'M', releaseDay: 2,
-    hint: 'Ngân hàng Nhà nước (sbv.gov.vn): mức đang áp dụng cuối tháng.' },
-];
-
-/** Chuỗi nhập tay đến hạn: kỳ mới nhất đáng lẽ đã công bố mà chưa có. */
-export function manualDue(docs, today) {
-  const [y, m, d] = today.split('-').map(Number);
-  const due = [];
-  for (const def of MANUAL_SERIES) {
-    const doc = docs.find((x) => x.id === def.id);
-    const last = doc?.d?.length ? doc.d[doc.d.length - 1].slice(0, 7) : null;
-    let py = y; let pm = m - 1;
-    if (d < def.releaseDay) pm -= 1;
-    while (pm < 1) { pm += 12; py -= 1; }
-    const expected = `${py}-${String(pm).padStart(2, '0')}`;
-    if (!last || last < expected) due.push({ id: def.id, name: def.name, period: expected, hint: def.hint, last });
-  }
-  return due;
-}
 
 export function manualEntry(o) {
   const def = MANUAL_SERIES.find((m) => m.id === o.id);

@@ -1,7 +1,8 @@
 // Vĩ mô: điểm tổng hợp theo vùng × yếu tố, từng chuỗi với kỳ, ngày công bố, độ lệch chuẩn và nguồn.
 
 import { h, raw } from '../lib/dom.js';
-import { S, seriesHist, loadHistory } from '../lib/store.js';
+import { S, seriesHist, loadHistory, dbList, emit } from '../lib/store.js';
+import { manualDue } from '../../engine/manual.mjs';
 import * as F from '../lib/fmt.js';
 import { sparkline } from '../lib/charts.js';
 import { sourceLink } from './common.js';
@@ -47,8 +48,10 @@ function seriesTable(c, region) {
 }
 
 function manualCard(c) {
-  const have = c.manual || [];
-  const due = c.manualDue || [];
+  // số nhập tay nằm trong DB của artifact; khung xem không mở được DB thì dùng bản đi kèm bundle
+  const docs = S.ui.manualDocs;
+  const have = docs ? docs.map((m) => ({ id: m.id, name: m.name, unit: m.unit, last: m.d?.length ? { date: m.d[m.d.length - 1], value: m.v[m.v.length - 1], confidence: m.src?.[m.src.length - 1]?.confidence, sources: m.src?.[m.src.length - 1]?.sources || [] } : null })) : c.manual || [];
+  const due = manualDue(docs || [], F.vnToday());
   if (!have.length && !due.length) return '';
   return h`<section class="card" aria-labelledby="t-manual"><header><h2 id="t-manual">Việt Nam: số đọc từ thông cáo</h2><span class="note">Chỉ hiển thị, chưa vào mô hình cho tới khi đủ 36 tháng</span></header>
     ${have.length ? h`<div class="table-wrap"><table><thead><tr><th>Chuỗi</th><th class="num">Giá trị</th><th>Kỳ</th><th>Độ tin</th><th>Nguồn</th></tr></thead><tbody>${have.map((m) => h`<tr>
@@ -65,4 +68,8 @@ export function render() {
 
 export function mount() {
   if (!S.history) loadHistory();
+  if (S.capsReady && S.caps.db && !S.ui.manualDocs && !S.ui.manualLoading) {
+    S.ui.manualLoading = true;
+    dbList('manual', { limit: 20 }).then((d) => { S.ui.manualDocs = d || []; }).catch(() => { S.ui.manualDocs = []; }).finally(emit);
+  }
 }

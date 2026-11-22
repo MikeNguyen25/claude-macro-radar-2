@@ -25,6 +25,10 @@ concurrency:
   group: data
   cancel-in-progress: false
 
+defaults:
+  run:
+    shell: bash   # bash -eo pipefail: lỗi trong ống lệnh (node | tee) làm bước thất bại
+
 jobs:
   propose:
     runs-on: ubuntu-latest
