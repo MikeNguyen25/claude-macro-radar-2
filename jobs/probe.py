@@ -747,7 +747,16 @@ def norm_period(tp: str) -> str | None:
 def p_imf_country(flow: str, iso3: str = "VNM", agency: str = "IMF.STA") -> Callable[[], dict]:
     """Đọc cấu trúc một dataflow IMF mới rồi lấy mọi chuỗi của một nước (SDMX 2.1)."""
     def run() -> dict:
-        r0, ms0 = http_get(f"{IMF21}/dataflow/{agency}/{flow}/latest", {"references": "datastructure"},
+        # Bước 1: dataflow (không kèm tham chiếu) để biết DSD; bước 2: DSD không kèm codelist (nhỏ).
+        rf, msf = http_get(f"{IMF21}/dataflow/{agency}/{flow}/latest", {"references": "none"},
+                           headers={"Accept": "application/xml"}, cap=60)
+        ref = re.search(r"<(?:\w+:)?Structure\b[^>]*>\s*<(?:\w+:)?Ref\b([^>]*)/?>", rf.text or "", re.S)
+        ra = dict(re.findall(r'(\w+)="([^"]*)"', ref.group(1))) if ref else {}
+        if not ra.get("id"):
+            return fail(rf, msf, f"IMF {flow}: không thấy DSD trong dataflow")
+        time.sleep(DEFAULT_DELAY_S)
+        r0, ms0 = http_get(f"{IMF21}/datastructure/{ra.get('agencyID', agency)}/{ra['id']}/"
+                           f"{ra.get('version', 'latest')}", {"references": "none"},
                            headers={"Accept": "application/xml"}, cap=60)
         dims: list[tuple[int, str]] = []
         for tag in re.findall(r"<(?:\w+:)?Dimension\b[^>]*>", r0.text or ""):
@@ -774,16 +783,17 @@ def p_imf_country(flow: str, iso3: str = "VNM", agency: str = "IMF.STA") -> Call
                 for obs in re.findall(r"<(?:\w+:)?Obs\b([^>]*)/?>", body):
                     o = dict(re.findall(r'(\w+)="([^"]*)"', obs))
                     series[skey].append((norm_period(o.get("TIME_PERIOD", "")), o.get("OBS_VALUE")))
-        if not series:
-            out = fail(r1, ms1, f"IMF {flow}: không có chuỗi nào cho {iso3}")
-            out.update(dims=order, key=key)
-            return out
         summ = {k: summarize(v) for k, v in series.items()}
+        summ = {k: s for k, s in summ.items() if s.get("n")}
+        if not summ:
+            out = fail(r1, ms1, f"IMF {flow}: không có chuỗi nào cho {iso3}")
+            out.update(dims=order, key=key, dsd=ra.get("id"))
+            return out
         top = sorted(summ.items(), key=lambda kv: (kv[1].get("freq") != "M", -(kv[1].get("n") or 0)))[:25]
         monthly = [s for s in summ.values() if s.get("freq") == "M"]
         best = max(monthly or list(summ.values()), key=lambda s: s.get("n") or 0)
-        return {"ok": True, "status": r1.status_code, "ms": ms0 + ms1, "dims": order, "key": key,
-                "n_series": len(summ), "n_monthly": len(monthly), "series": dict(top),
+        return {"ok": True, "status": r1.status_code, "ms": msf + ms0 + ms1, "dims": order, "key": key,
+                "dsd": ra.get("id"), "n_series": len(summ), "n_monthly": len(monthly), "found": dict(top),
                 "first": best.get("first"), "last": best.get("last"), "freq": best.get("freq"),
                 "age_days": best.get("age_days")}
     return run
@@ -1002,6 +1012,7 @@ IMF_FLOWS = [
     ("vn.markets_imf", "MFS_FMP", "Giá thị trường tài chính Việt Nam (IMF MFS)"),
     ("vn.ip_imf", "PI", "Chỉ số sản xuất Việt Nam (IMF)"),
     ("vn.trade_imf", "ITG", "Thương mại hàng hóa Việt Nam (IMF)"),
+    ("vn.liquidity_imf", "IL", "Thanh khoản quốc tế, dự trữ Việt Nam (IMF)"),
 ]
 
 SITES = [
