@@ -145,3 +145,16 @@ Kế hoạch ở `docs/PLAN.md` (bản sao trong Project). Mike cho chạy tiế
   DB có `analyses/2026-11-22` (hash `7db7ad2d…`), `scores/ai`, `public/latest`, `meta/status`.
 - Tác vụ "macro-radar 2 · sáng 07:40" (trig_01Lr5o2wGQ6cTHitCgBy733C), tự duyệt, thông báo đẩy.
 - Rủi ro đã biết: cron của GitHub ở repo mới có thể trễ nhiều giờ hoặc không chạy; chưa có lần chạy theo lịch nào tính tới 13:45 UTC 22/11.
+
+## G6b Sửa đường đăng của tác vụ tự động (22/11/2026, tối)
+
+- Tự kiểm 2 trong phiên tự động cho thấy: phiên chỉ có công cụ Artifact và ArtifactData (không có publish_files, db_write);
+  Artifact publish bắt buộc `file_path` là file trang và trước đó phải Read hết trang; `gh workflow run` bị chặn (GraphQL),
+  nhưng công cụ GitHub `actions_run_trigger` chạy được job.
+- Lần chạy job theo lệnh hôm 22/11 đỏ vì `write_if_changed` gặp nhật ký sửa số dạng danh sách (`update.py`). Đã sửa (d399020);
+  lần chạy lại xanh toàn bộ.
+- Trang tách thành `index.html` khoảng 1 KB, `app.js`, `app.css` (bản đóng gói lưu trong `web/`), nên mỗi sáng chỉ phải đọc
+  khoảng 20 dòng trước khi đăng. Đã đăng lên artifact (version 1795360561-119d), cùng `analyses/2026-11-22.json` và `data/ai_scores.json`.
+- `mrc ai` in sẵn map file đăng (đường dẫn tuyệt đối) và `db_writes.json` cho ArtifactData (mỗi doc gửi bằng `file_path`), nên số
+  liệu không đi qua ngữ cảnh; M6 tới hạn được chấm từ file đã đăng sau khi kiểm hash.
+- Runbook và prompt tác vụ 07:40 đổi theo các công cụ trên; dự báo hôm nay chưa có thì tác vụ tự chạy job `prices-daily`.
