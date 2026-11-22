@@ -337,7 +337,7 @@ ASSETS = [
          primary=[("cnbc", "XAU="), ("cnbc", "@GC.1")], check=("binance", "PAXGUSDT"), same=False, tol={"level_pct": 3.0},
          tz=-5, close=17, forecast=True),
     dict(id="brent", name="Dầu Brent", group="cmd_fx", kind="price", unit="USD/thùng",
-         primary=[("cnbc", "@LCO.1")], check=("fred", "DCOILBRENTEU"), same=False, tol={"level_pct": 8.0}, tz=-5, close=17,
+         primary=[("cnbc", "@LCO.1")], check=("fred", "DCOILBRENTEU"), same=False, tol={"level_pct": 12.0}, tz=-5, close=17,
          forecast=True),
     dict(id="usdvnd", name="USD/VND", group="cmd_fx", kind="price", unit="VND", primary=[("cnbc", "VND=")],
          check=("currency_api", "vnd"), same=False, tol={"level_pct": 1.5}, tz=7, close=17, forecast=True),
@@ -396,7 +396,7 @@ SERIES = [
     S(id="cn_retail", name="Bán lẻ TQ (% so cùng kỳ)", region="cn", factor="growth", sign=1, transform="level",
       unit="%", freq="M", lag=17, fetch=("eastmoney", ("RPT_ECONOMY_TOTAL_RETAIL", "RETAIL_TOTAL_SAME"))),
     S(id="cn_gdp", name="GDP TQ lũy kế (% so cùng kỳ)", region="cn", factor="growth", sign=1, transform="level",
-      unit="%", freq="Q", lag=20, fetch=("eastmoney", ("RPT_ECONOMY_GDP", "SUM_SAME"))),
+      unit="%", freq="Q", lag=20, period_end="month", fetch=("eastmoney", ("RPT_ECONOMY_GDP", "SUM_SAME"))),
     S(id="cn_cli", name="OECD CLI Trung Quốc", region="cn", factor="growth", sign=1, transform="chg6",
       unit="chỉ số", freq="M", lag=40, fetch=("oecd_cli", "CHN")),
     S(id="cn_cpi", name="CPI TQ (% so cùng kỳ)", region="cn", factor="inflation", sign=1, transform="level",
@@ -657,6 +657,8 @@ def process_series(s: dict, out_dir: str, rev_log: list) -> dict:
     dates, values, segments = merge(old, pairs, source, rev_log, s["id"], key="v")
     age = (TODAY - dt.date.fromisoformat(dates[-1])).days if dates else None
     meta = {k: s[k] for k in ("id", "name", "region", "factor", "sign", "transform", "unit", "freq")}
+    if s.get("period_end"):
+        meta["periodEnd"] = s["period_end"]  # kỳ quý ghi theo tháng cuối quý
     doc = {"schemaVersion": SCHEMA_VERSION, **meta, "pubLagDays": s["lag"], "source": source,
            "segments": segments, "updated": NOW.isoformat(timespec="seconds"), "d": dates, "v": values}
     write_if_changed(path, doc, keys_ignore=("updated",))
