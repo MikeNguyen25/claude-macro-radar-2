@@ -10,7 +10,7 @@ chấm M6, đăng file lên artifact, ghi vài doc DB và nhắn Mike.
 - Không sửa `state/` và không chạy `mrc.mjs daily`: sổ dự báo chỉ do GitHub Actions ghi.
 - Mọi lệnh chạy từ thư mục làm việc của phiên (`pwd`), dùng các thư mục con `mr/`, `mr-db/`, `mr-out/`.
 
-## Công cụ (đã kiểm trong phiên tự động ngày 22/11/2026)
+## Công cụ (đã kiểm trong phiên tự động ngày 22/11/2026, lần tự kiểm 2 và 3)
 
 - **Artifact**: `{action: "read", url}` lưu trang ra file và cho biết đường dẫn (muốn đăng phải Read hết file đó);
   `{action: "read", url, paths: [...]}` tải file đã đăng về thư mục nháp của artifact (không truyền `out_dir`, vì lưu
@@ -74,8 +74,9 @@ sửa; `notes` ghi việc chấm M6. Không cần chạy lại.
 
 ## 5. Đăng file lên artifact
 
-1. Artifact read `url` (không `path`, không `paths`): công cụ lưu trang ra file. Read hết file đó (trang chỉ khoảng
-   20 dòng; `app.js` và `app.css` là file riêng, không cần đọc).
+1. Artifact read `url` (không `path`, không `paths`): trang chỉ khoảng 20 dòng nên thường trả thẳng trong kết quả; nếu
+   công cụ lưu ra file thì Read hết file đó. `app.js` và `app.css` là file riêng, không cần đọc. Công cụ sẽ bọc trang
+   trong khung riêng khi đăng; trang đã tính tới việc này.
 2. Artifact publish với `url`, `file_path` là `page` của bước 4 (khi `page` null: file trang vừa lưu ở bước 5.1) và
    `files` là đúng map `files` của bước 4.
 3. Artifact list `scope: "files"` với `url`: `data/bundle.json` và `ledger/<hôm nay>.json` phải có mặt.

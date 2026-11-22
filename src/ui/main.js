@@ -33,7 +33,14 @@ function applyTheme(t) {
   if (b) { b.textContent = THEME_LABEL[t]; b.setAttribute('aria-label', `Giao diện: ${THEME_LABEL[t]}. Bấm để đổi`); }
 }
 
+// Công cụ đăng của phiên tự động bọc trang trong khung riêng, nên <link>, <meta>, <title> của trang nằm trong <body>.
+// Chuyển chúng lên <head> trước khi vẽ, để việc vẽ lại <body> không xóa mất CSS, phông chữ và biểu tượng.
+function hoistHead() {
+  for (const el of document.body.querySelectorAll('link, meta, title, style')) document.head.appendChild(el);
+}
+
 function shell() {
+  hoistHead();
   document.body.innerHTML = String(h`<a class="sr-only" href="#main">Bỏ qua điều hướng</a>
   <header class="top">
     <div class="top-row">
