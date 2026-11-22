@@ -1,6 +1,7 @@
-// Đóng gói trang: một file dist/index.html (JS, CSS nhúng sẵn, dưới 300 KB) và dist/sandbox-worker.js
+// Đóng gói trang: dist/index.html (nhỏ), dist/app.js, dist/app.css (tổng dưới 300 KB) và dist/sandbox-worker.js
 // (engine chạy trong tiến trình nền cho bàn thử cấu hình).
-//   node build.mjs                                  chỉ đóng gói
+//   node build.mjs                                  chỉ đóng gói (vào dist/)
+//   node build.mjs --out web                        bản giao diện lưu trong repo; tác vụ 07:40 đăng lại từ đây
 //   node build.mjs --preview site --state state     kèm số liệu để xem thử cục bộ và chạy E2E
 
 import fs from 'node:fs';
@@ -11,7 +12,7 @@ import * as esbuild from 'esbuild';
 const MAX_INDEX_BYTES = 300 * 1024;
 const args = process.argv.slice(2);
 const opt = (k) => { const i = args.indexOf(`--${k}`); return i >= 0 ? args[i + 1] : null; };
-const out = 'dist';
+const out = opt('out') || 'dist';
 fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(out, { recursive: true });
 
@@ -21,6 +22,8 @@ const worker = (await esbuild.build({ ...common, entryPoints: ['src/ui/worker.js
 const css = (await esbuild.transform(fs.readFileSync('src/ui/styles.css', 'utf8'), { loader: 'css', minify: true })).code;
 const version = JSON.parse(fs.readFileSync('package.json', 'utf8')).version;
 
+// Trang tách 3 file: index.html nhỏ (tác vụ tự động phải đọc hết trang trước khi đăng lại, nên giữ trang
+// thật gọn), app.css và app.js. Cả ba cùng nằm trong artifact.
 const html = `<!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -33,18 +36,21 @@ const html = `<!DOCTYPE html>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
-<style>${css}</style>
+<link rel="stylesheet" href="app.css">
+<script src="app.js" defer></script>
 </head>
 <body>
 <noscript><p style="padding:16px">Trang cần JavaScript để hiển thị dự báo.</p></noscript>
-<script>${js.replace(/<\/script/gi, '<\\/script')}</script>
 </body>
 </html>
 `;
 fs.writeFileSync(path.join(out, 'index.html'), html);
+fs.writeFileSync(path.join(out, 'app.js'), js);
+fs.writeFileSync(path.join(out, 'app.css'), css);
 fs.writeFileSync(path.join(out, 'sandbox-worker.js'), worker);
-const size = fs.statSync(path.join(out, 'index.html')).size;
-const res = { index: size, worker: worker.length, css: css.length, js: js.length };
+const bytes = (f) => fs.statSync(path.join(out, f)).size;
+const size = bytes('index.html') + bytes('app.js') + bytes('app.css');
+const res = { out, index: bytes('index.html'), app: bytes('app.js'), css: bytes('app.css'), worker: bytes('sandbox-worker.js'), pageTotal: size };
 
 const site = opt('preview');
 if (site) {
@@ -60,6 +66,6 @@ if (site) {
 }
 console.log(JSON.stringify(res));
 if (size > MAX_INDEX_BYTES) {
-  console.error(`index.html ${size} byte vượt giới hạn ${MAX_INDEX_BYTES}`);
+  console.error(`trang (index.html + app.js + app.css) ${size} byte vượt giới hạn ${MAX_INDEX_BYTES}`);
   process.exit(1);
 }

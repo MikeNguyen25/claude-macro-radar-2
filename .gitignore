@@ -8,3 +8,8 @@ __pycache__/
 .DS_Store
 *.log
 /tmp/
+/out/
+/mr/
+/mr-db/
+/mr-prev/
+/mr-out/

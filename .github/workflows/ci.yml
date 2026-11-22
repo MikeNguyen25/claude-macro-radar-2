@@ -1,10 +1,11 @@
 name: ci
-# Kiểm thử engine và runner, đóng gói trang (index.html < 300 KB), chạy E2E bằng Chrome ở 390 px và 1280 px.
+# Kiểm thử engine và runner, kiểm web/ khớp mã nguồn, đóng gói trang (index.html + app.js + app.css < 300 KB),
+# chạy E2E bằng Chrome ở 390 px và 1280 px.
 
 on:
   push:
     branches: [main]
-    paths: ["src/**", "tools/**", "tests/**", "build.mjs", "package.json", "package-lock.json", ".github/workflows/ci.yml"]
+    paths: ["src/**", "web/**", "tools/**", "tests/**", "build.mjs", "package.json", "package-lock.json", ".github/workflows/ci.yml"]
   pull_request:
   workflow_dispatch:
 
@@ -24,6 +25,10 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - name: Kiểm thử
         run: npm test
+      - name: web/ khớp mã nguồn (tác vụ 07:40 đăng giao diện từ web/)
+        run: |
+          node build.mjs --out /tmp/web-check > /dev/null
+          diff -r web /tmp/web-check || { echo "web/ cũ: chạy npm run web rồi commit"; exit 1; }
       - name: Đóng gói và dựng bản xem thử từ số liệu hiện có
         run: |
           today=$(node -e "console.log(new Date(Date.now()+7*3600e3).toISOString().slice(0,10))")

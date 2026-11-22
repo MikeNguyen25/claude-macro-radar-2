@@ -72,4 +72,28 @@ test('một ngày đầy đủ trên số liệu thật: dự báo, bỏ qua l�
   assert.ok(ops.every((x) => JSON.stringify(x.data).length < 256 * 1024));
   assert.ok(res.message.split('\n').length <= 12);
   assert.ok(fs.existsSync(path.join(out, 'files', 'ledger', '2026-11-20.json')));
+  assert.ok(fs.existsSync(path.join(out, 'files', 'analyses', '2026-11-20.json')));
+  const writes = JSON.parse(fs.readFileSync(path.join(out, 'db_writes.json'), 'utf8'));
+  assert.deepEqual(writes.map((w) => `${w.collection}/${w.doc_id}`), ['analyses/2026-11-20', 'scores/ai', 'public/latest', 'meta/status']);
+  assert.ok(writes.every((w) => fs.existsSync(w.file_path)));
+  // file đăng: đường dẫn tuyệt đối; có trang và mã giao diện khi repo có web/
+  assert.ok(Object.values(res.files).every((f) => path.isAbsolute(f) && fs.existsSync(f)));
+  if (res.page) assert.deepEqual(['app.js', 'app.css', 'sandbox-worker.js'].filter((f) => !res.files[f]), []);
+  // 30 ngày sau: M6 chấm từ file đã đăng (--prev). Nhận định bị sửa thì không chấm; điểm cũ được nạp.
+  const prev = path.join(tmp, 'prev');
+  fs.mkdirSync(path.join(prev, 'analyses'), { recursive: true });
+  fs.mkdirSync(path.join(prev, 'data'), { recursive: true });
+  const bad = JSON.parse(fs.readFileSync(path.join(out, 'files', 'analyses', '2026-11-20.json'), 'utf8'));
+  assert.ok(verifyAnalysisDoc(bad));
+  bad.date = '2026-10-21';
+  assert.equal(verifyAnalysisDoc(bad), false, 'sửa nhận định là lộ');
+  fs.writeFileSync(path.join(prev, 'analyses', '2026-10-21.json'), JSON.stringify(bad));
+  const prevScores = JSON.parse(fs.readFileSync(res.files['data/ai_scores.json'], 'utf8'));
+  prevScores.done = { ...prevScores.done, '2026-10-01': 1 };
+  fs.writeFileSync(path.join(prev, 'data', 'ai_scores.json'), JSON.stringify(prevScores));
+  const res2 = aiLayer({ data: 'data', state: st, site, out: path.join(tmp, 'out2'), ai: aiFile, prev });
+  assert.equal(res2.aiDue, '2026-10-21');
+  assert.ok(res2.notes.some((n) => n.includes('analyses/2026-10-21') && n.includes('không khớp')), JSON.stringify(res2.notes));
+  assert.equal(res2.aiScored, 0);
+  assert.equal(JSON.parse(fs.readFileSync(res2.files['data/ai_scores.json'], 'utf8')).done['2026-10-01'], 1);
 });

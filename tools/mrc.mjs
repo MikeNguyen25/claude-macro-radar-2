@@ -18,7 +18,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { pathToFileURL, fileURLToPath } from 'node:url';
 import * as E from '../src/engine/index.mjs';
 import { validateAi, analysisDoc, verifyAnalysisDoc, aiBadge, AI_MAX_DEV } from '../src/engine/ai.mjs';
 import { MANUAL_SERIES, manualDue } from '../src/engine/manual.mjs';
@@ -26,6 +26,8 @@ import { MANUAL_SERIES, manualDue } from '../src/engine/manual.mjs';
 export { validateAi, analysisDoc, verifyAnalysisDoc, aiBadge, MANUAL_SERIES, manualDue };
 
 export const INITIAL_VERSION = '2.0.0';
+/** File giao diện đóng gói trong web/, đăng cạnh trang (index.html là file_path của lần đăng). */
+export const WEB_FILES = ['app.js', 'app.css', 'sandbox-worker.js'];
 export const REPO = 'MikeNguyen25/claude-macro-radar-2';
 const PENDING_KEEP_DAYS = 120;   // bỏ ngày chờ chấm cũ hơn chừng này
 const LEDGER_LIST_KEEP = 400;    // số ngày sổ dự báo liệt kê trong status và bundle
@@ -584,15 +586,24 @@ export function aiLayer(o) {
   const { ai, issues } = validateAi(aiRaw, core.live);
   const analysis = ai ? analysisDoc(ai, issues, { date: today, version: core.version, forecastHash: fdoc.hash, createdAt }) : null;
 
-  // ---- chấm M6 tới hạn
+  // ---- chấm M6 tới hạn. Nguồn: file đã tải từ artifact (--prev: data/ai_scores.json, analyses/<ngày>.json)
+  // hoặc file riêng (--aiscores, --due).
   const versions = readDbFile(o.versions).data || {};
-  const prevScores = readDbFile(o.aiscores).data;
+  const prevDir = o.prev && o.prev !== true ? o.prev : null;
+  const prevFile = (rel) => (prevDir && fs.existsSync(path.join(prevDir, rel)) ? path.join(prevDir, rel) : null);
+  const prevScores = readDbFile(o.aiscores).data || (prevFile('data/ai_scores.json') ? readJson(prevFile('data/ai_scores.json')) : null);
   let aiScored = [];
   const notes = [];
-  if (o.due && o.due !== true && fs.existsSync(o.due)) {
-    const due = readDbFile(o.due).data;
-    const fd = due && S[`forecasts/${due.date}`];
-    if (!due?.date || !due.probs) notes.push('file nhận định tới hạn thiếu date hoặc probs');
+  let due = o.due && o.due !== true && fs.existsSync(o.due) ? readDbFile(o.due).data : null;
+  const dueDate = E.fromDay(E.toDay(today) - 30);
+  if (!due && prevFile(`analyses/${dueDate}.json`)) {
+    const doc = readJson(prevFile(`analyses/${dueDate}.json`));
+    if (!verifyAnalysisDoc(doc)) notes.push(`hash analyses/${dueDate} không khớp: không chấm M6`);
+    else due = { date: doc.date, hash: doc.hash, probs: Object.fromEntries((doc.assets || []).map((x) => [x.id, x.prob_up])) };
+  }
+  if (due) {
+    const fd = S[`forecasts/${due.date}`];
+    if (!due.date || !due.probs) notes.push('nhận định tới hạn thiếu date hoặc probs');
     else if (!fd) notes.push(`không có forecasts/${due.date} để chấm AI`);
     else if (E.toDay(due.date) + 30 > E.toDay(today)) notes.push(`nhận định ${due.date} chưa tới hạn`);
     else aiScored = scoreAi(due, fd, E.prepare(loadData(o.data || 'data').raw), E.toDay(today));
@@ -622,6 +633,8 @@ export function aiLayer(o) {
   fs.copyFileSync(path.join(siteDir, 'history.json'), path.join(outDir, 'files', 'data', 'history.json'));
   writeJson(path.join(outDir, 'files', 'data', 'latest.json'), latest);
   writeJson(path.join(outDir, 'files', 'ledger', `${today}.json`), fdoc, true);
+  writeJson(path.join(outDir, 'files', 'data', 'ai_scores.json'), aiScores);
+  if (analysis) writeJson(path.join(outDir, 'files', 'analyses', `${today}.json`), analysis, true);
 
   // ---- lệnh ghi DB (doc nhỏ); doc đã có cần ifVersion
   const op = (p, data) => (versions[p] ? { op: 'set', path: p, ifVersion: versions[p], data } : { op: 'set', path: p, data });
@@ -634,10 +647,31 @@ export function aiLayer(o) {
     aiIssues: issues, aiScored: aiScored.length, qaIssues: core.qa?.issues || [], actionsRun: core.status?.lastRun?.at || null,
   }));
   writeJson(path.join(outDir, 'db_ops.json'), ops);
+  // Cho công cụ ArtifactData (phiên tự động): mỗi doc một file, gửi bằng file_path nên không phải chép số liệu.
+  const writes = ops.map((x) => {
+    const [collection, docId] = x.path.split('/');
+    const f = path.resolve(outDir, 'db', `${collection}__${docId}.json`);
+    writeJson(f, x.data);
+    return { op: 'set', collection, doc_id: docId, file_path: f, ...(x.ifVersion ? { if_version: x.ifVersion } : {}) };
+  });
+  writeJson(path.join(outDir, 'db_writes.json'), writes, true);
+
+  // ---- file đăng lên artifact: số liệu hôm nay, cộng trang và mã giao diện đã đóng gói trong repo (web/), nên giao
+  // diện trên artifact luôn khớp commit đã qua CI. Chủ nhật (hoặc --raw) thêm số liệu thô cho bàn thử cấu hình.
+  const files = Object.fromEntries(['data/bundle.json', 'data/history.json', 'data/latest.json', 'data/ai_scores.json', `ledger/${today}.json`,
+    ...(analysis ? [`analyses/${today}.json`] : [])].map((f) => [f, path.resolve(outDir, 'files', f)]));
+  const webDir = path.resolve(o.web && o.web !== true ? o.web : path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'web'));
+  const page = fs.existsSync(path.join(webDir, 'index.html')) ? path.join(webDir, 'index.html') : null;
+  if (page) {
+    for (const f of WEB_FILES) if (fs.existsSync(path.join(webDir, f))) files[f] = path.join(webDir, f);
+  } else notes.push(`không thấy ${webDir}/index.html: đăng bằng file trang mà Artifact read đã lưu`);
+  if (o.raw === true || o.raw === 'yes' || weekday(today) === 0) {
+    files['data/raw.json'] = rawBundle({ data: o.data || 'data', out: path.resolve(outDir, 'files', 'data', 'raw.json') }).file;
+  }
   const message = dailyMessage(core, { ai, issues, aiScored, aiLive, S, today });
   fs.writeFileSync(path.join(outDir, 'message.txt'), `${message}\n`);
   return { ok: true, today, version: core.version, ops: ops.map((x) => `${x.path}${x.ifVersion ? ` (ifVersion ${x.ifVersion})` : ''}`), opBytes: JSON.stringify(ops).length,
-    aiIssues: issues, aiScored: aiScored.length, notes, files: ['files/data/bundle.json', 'files/data/history.json', 'files/data/latest.json', `files/ledger/${today}.json`], message };
+    aiIssues: issues, aiScored: aiScored.length, aiDue: dueDate, notes, page, files, dbWrites: path.resolve(outDir, 'db_writes.json'), message };
 }
 
 /** public/latest trong DB: bản gọn (bỏ phần giải thích trường, làm tròn số). */
@@ -719,9 +753,14 @@ export function manualEntry(o) {
     doc.d.splice(at, 0, date); doc.v.splice(at, 0, value); doc.src.splice(at, 0, entry);
   }
   const p = `manual/${def.id}`;
+  const out = o.out || 'out';
   const ops = [cur.version ? { op: 'set', path: p, ifVersion: cur.version, data: doc } : { op: 'set', path: p, data: doc }];
-  writeJson(path.join(o.out || 'out', `manual_${def.id}.json`), ops);
-  return { ok: true, write: `manual_${def.id}.json`, confidence: entry.confidence, revisedFrom: entry.revisedFrom ?? null };
+  writeJson(path.join(out, `manual_${def.id}.json`), ops);
+  const docFile = path.resolve(out, 'db', `manual__${def.id}.json`);
+  writeJson(docFile, doc);
+  const writes = [{ op: 'set', collection: 'manual', doc_id: def.id, file_path: docFile, ...(cur.version ? { if_version: cur.version } : {}) }];
+  writeJson(path.join(out, `manual_${def.id}.writes.json`), writes, true);
+  return { ok: true, write: `manual_${def.id}.json`, writesForArtifactData: `manual_${def.id}.writes.json`, confidence: entry.confidence, revisedFrom: entry.revisedFrom ?? null };
 }
 
 // ------------------------------------------------------------------ status, rollback, propose, raw
