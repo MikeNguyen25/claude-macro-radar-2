@@ -42,8 +42,7 @@ MAX_BYTES = 60_000_000
 SCHEMA_VERSION = 1
 SAME_INSTR_TOL_PCT = 0.5       # lệch giá tối đa (%) giữa hai nguồn cùng một công cụ
 YIELD_TOL_PP = 0.05            # lệch lợi suất tối đa (điểm %) = 5 điểm cơ bản
-DIFF_INSTR_LEVEL_TOL_PCT = 3.0  # lệch mức giá tối đa (%) giữa hai công cụ khác loại
-DIFF_INSTR_CHANGE_TOL_PP = 0.5  # lệch biến động ngày tối đa (điểm %) giữa hai công cụ khác loại
+DIFF_INSTR_LEVEL_TOL_PCT = 3.0  # lệch mức giá tối đa (%) mặc định giữa hai công cụ khác loại
 JUMP_Z = 6.0                   # |z| của biến động ngày vượt ngưỡng này thì cách ly
 SESSION = requests.Session()
 SESSION.headers.update({"User-Agent": UA_BROWSER, "Accept": "*/*"})
@@ -55,7 +54,7 @@ def get(url: str, params: dict | None = None, headers: dict | None = None,
         cap: float = CAP_S) -> requests.Response:
     """GET có giới hạn thời gian tổng và kích thước; lỗi HTTP ném ngoại lệ."""
     t0 = time.monotonic()
-    resp = SESSION.get(url, params=params, headers=headers, stream=True, timeout=(10, 30))
+    resp = SESSION.get(url, params=params, headers=headers, stream=True, timeout=(10, 60))
     buf = bytearray()
     try:
         for chunk in resp.iter_content(65536):
@@ -108,11 +107,18 @@ def f_fred(sid: str):
 
 def f_cm(asset: str):
     url = "https://community-api.coinmetrics.io/v4/timeseries/asset-metrics"
-    params = {"assets": asset, "metrics": "PriceUSD", "frequency": "1d", "page_size": 10000,
+    params = {"assets": asset, "metrics": "PriceUSD", "frequency": "1d", "page_size": 2000,
               "paging_from": "start", "start_time": "2009-01-01"}
     pairs: list = []
     while url:
-        j = jget(url, params)
+        for attempt in range(3):
+            try:
+                j = jget(url, params, cap=120)
+                break
+            except Exception:  # noqa: BLE001 - máy chủ community đôi khi chậm; thử lại
+                if attempt == 2:
+                    raise
+                time.sleep(5 * (attempt + 1))
         pairs += [(x["time"][:10], fnum(x.get("PriceUSD"))) for x in j.get("data", [])]
         url, params = j.get("next_page_url"), None
         if url:
@@ -307,16 +313,16 @@ FETCHERS = {
 # Tài sản: id, tên, nhóm, kind, đơn vị, nguồn chính (thử theo thứ tự), nguồn đối chiếu,
 # cùng công cụ hay không, múi giờ sàn (giờ so với UTC) và giờ đóng cửa (để bỏ phiên đang chạy).
 ASSETS = [
-    dict(id="btc", name="BTC", group="crypto", kind="price", unit="USD", primary=[("cm", "btc")],
-         check=("binance", "BTCUSDT"), same=False, tz=0, close=24, forecast=True),
-    dict(id="eth", name="ETH", group="crypto", kind="price", unit="USD", primary=[("cm", "eth")],
-         check=("binance", "ETHUSDT"), same=False, tz=0, close=24, forecast=True),
-    dict(id="sol", name="SOL", group="crypto", kind="price", unit="USD", primary=[("cm", "sol")],
-         check=("binance", "SOLUSDT"), same=False, tz=0, close=24, forecast=True),
-    dict(id="doge", name="DOGE", group="crypto", kind="price", unit="USD", primary=[("cm", "doge")],
-         check=("binance", "DOGEUSDT"), same=False, tz=0, close=24, forecast=True),
-    dict(id="trx", name="TRX", group="crypto", kind="price", unit="USD", primary=[("cm", "trx")],
-         check=("binance", "TRXUSDT"), same=False, tz=0, close=24, forecast=True),
+    dict(id="btc", name="BTC", group="crypto", kind="price", unit="USD", primary=[("cm", "btc"), ("binance", "BTCUSDT")],
+         check=("binance", "BTCUSDT"), same=False, tol={"level_pct": 1.5}, tz=0, close=24, forecast=True),
+    dict(id="eth", name="ETH", group="crypto", kind="price", unit="USD", primary=[("cm", "eth"), ("binance", "ETHUSDT")],
+         check=("binance", "ETHUSDT"), same=False, tol={"level_pct": 1.5}, tz=0, close=24, forecast=True),
+    dict(id="sol", name="SOL", group="crypto", kind="price", unit="USD", primary=[("cm", "sol"), ("binance", "SOLUSDT")],
+         check=("binance", "SOLUSDT"), same=False, tol={"level_pct": 1.5}, tz=0, close=24, forecast=True),
+    dict(id="doge", name="DOGE", group="crypto", kind="price", unit="USD", primary=[("cm", "doge"), ("binance", "DOGEUSDT")],
+         check=("binance", "DOGEUSDT"), same=False, tol={"level_pct": 1.5}, tz=0, close=24, forecast=True),
+    dict(id="trx", name="TRX", group="crypto", kind="price", unit="USD", primary=[("cm", "trx"), ("binance", "TRXUSDT")],
+         check=("binance", "TRXUSDT"), same=False, tol={"level_pct": 1.5}, tz=0, close=24, forecast=True),
     dict(id="spx", name="S&P 500", group="us_eq", kind="price", unit="điểm", primary=[("cnbc", ".SPX")],
          check=("fred", "SP500"), same=True, tz=-5, close=16, forecast=True),
     dict(id="ndq", name="Nasdaq Composite", group="us_eq", kind="price", unit="điểm",
@@ -328,19 +334,19 @@ ASSETS = [
     dict(id="vni", name="VN-Index", group="vn", kind="price", unit="điểm", primary=[("dnse", "VNINDEX")],
          check=("vndirect", "VNINDEX"), same=True, tz=7, close=15, forecast=True),
     dict(id="gold", name="Vàng", group="cmd_fx", kind="price", unit="USD/oz",
-         primary=[("cnbc", "XAU="), ("cnbc", "@GC.1")], check=("binance", "PAXGUSDT"), same=False,
+         primary=[("cnbc", "XAU="), ("cnbc", "@GC.1")], check=("binance", "PAXGUSDT"), same=False, tol={"level_pct": 3.0},
          tz=-5, close=17, forecast=True),
     dict(id="brent", name="Dầu Brent", group="cmd_fx", kind="price", unit="USD/thùng",
-         primary=[("cnbc", "@LCO.1")], check=("fred", "DCOILBRENTEU"), same=False, tz=-5, close=17,
+         primary=[("cnbc", "@LCO.1")], check=("fred", "DCOILBRENTEU"), same=False, tol={"level_pct": 8.0}, tz=-5, close=17,
          forecast=True),
     dict(id="usdvnd", name="USD/VND", group="cmd_fx", kind="price", unit="VND", primary=[("cnbc", "VND=")],
-         check=("currency_api", "vnd"), same=False, tz=7, close=17, forecast=True),
+         check=("currency_api", "vnd"), same=False, tol={"level_pct": 1.5}, tz=7, close=17, forecast=True),
     dict(id="ust10y", name="Lợi suất 10 năm Mỹ", group="cmd_fx", kind="yield", unit="%",
          primary=[("fred", "DGS10")], check=("treasury10", None), same=True, tz=-5, close=18, forecast=True),
     dict(id="vix", name="VIX", group="indicator", kind="level", unit="điểm", primary=[("cboe_vix", None)],
          check=("fred", "VIXCLS"), same=True, tz=-5, close=17, forecast=False),
     dict(id="dxy", name="DXY", group="indicator", kind="price", unit="điểm", primary=[("cnbc", ".DXY")],
-         check=("ecb_dxy", None), same=False, tz=-5, close=17, forecast=False),
+         check=("ecb_dxy", None), same=False, tol={"level_pct": 1.0}, tz=-5, close=17, forecast=False),
 ]
 
 # Chuỗi vĩ mô: vùng, nhóm nhân tố, dấu (cùng chiều nhân tố = +1), biến đổi cho mô hình,
@@ -530,35 +536,41 @@ def jump_check(dates: list, values: list, kind: str, n_tail: int = 3) -> list:
     return out
 
 
-def cross_check(dates: list, values: list, check_pairs: list, kind: str, same: bool) -> dict:
-    """So nguồn chính với nguồn đối chiếu trên các ngày chung trong 30 ngày gần nhất."""
+def cross_check(dates: list, values: list, check_pairs: list, kind: str, same: bool, tol: dict | None) -> dict:
+    """So nguồn chính với nguồn đối chiếu trên các ngày chung trong 30 ngày gần nhất.
+
+    Cùng công cụ: lệch giá ≤ 0,5% (lợi suất ≤ 5 điểm cơ bản). Khác công cụ (tương lai và giao ngay,
+    USDT và USD, giờ chốt khác nhau): chỉ so mức giá với ngưỡng riêng của cặp nguồn (tol.level_pct).
+    Nguồn đối chiếu chỉ có giá mới nhất, hoặc không có ngày chung, thì so điểm cuối hai bên nếu
+    cách nhau ≤ 4 ngày.
+    """
+    if not dates:
+        return {"n": 0, "status": "không có số liệu"}
     pm = dict(zip(dates, values))
-    cps = [(d, v) for d, v in check_pairs if v is not None]
-    if cps and cps[-1][0] is None:  # nguồn chỉ có giá mới nhất: so với điểm cuối của nguồn chính
-        cps = [(dates[-1], cps[-1][1])] if dates else []
+    cps = sorted(((d, v) for d, v in check_pairs if v is not None and d), key=lambda x: x[0])
+    latest_only = [(None, v) for d, v in check_pairs if d is None and v is not None]
     cutoff = (TODAY - dt.timedelta(days=30)).isoformat()
     common = [(d, pm[d], v) for d, v in cps if d in pm and d >= cutoff]
+    mode = "ngày chung"
     if not common:
-        return {"n": 0, "status": "không có ngày chung"}
+        last_check = latest_only[-1] if latest_only else (cps[-1] if cps else None)
+        if last_check is None:
+            return {"n": 0, "status": "không có ngày chung"}
+        cd = last_check[0] or dates[-1]
+        if abs((dt.date.fromisoformat(cd) - dt.date.fromisoformat(dates[-1])).days) > 4:
+            return {"n": 0, "status": "không có ngày chung", "check_last": cd}
+        common, mode = [(dates[-1], values[-1], last_check[1])], "điểm mới nhất"
     viol, worst = [], 0.0
-    for idx, (d, a, b) in enumerate(common):
+    for d, a, b in common:
         if kind == "yield":
-            diff = abs(a - b)
-            bad = diff > YIELD_TOL_PP
-        elif same:
-            diff = abs(a / b - 1) * 100
-            bad = diff > SAME_INSTR_TOL_PCT
+            diff, limit = abs(a - b), YIELD_TOL_PP
         else:
             diff = abs(a / b - 1) * 100
-            bad = diff > DIFF_INSTR_LEVEL_TOL_PCT
-            if idx > 0 and not bad:
-                pa, pb = common[idx - 1][1], common[idx - 1][2]
-                chg = abs((a / pa - 1) - (b / pb - 1)) * 100
-                bad = chg > DIFF_INSTR_CHANGE_TOL_PP
+            limit = SAME_INSTR_TOL_PCT if same else (tol or {}).get("level_pct", DIFF_INSTR_LEVEL_TOL_PCT)
         worst = max(worst, diff)
-        if bad:
+        if diff > limit:
             viol.append({"date": d, "primary": a, "check": b})
-    return {"n": len(common), "max_diff": round(worst, 4), "violations": viol[-5:],
+    return {"n": len(common), "mode": mode, "max_diff": round(worst, 4), "violations": viol[-5:],
             "status": "lệch" if viol else "khớp"}
 
 
@@ -601,7 +613,8 @@ def process_asset(a: dict, out_dir: str, rev_log: list) -> dict:
         try:
             cp, cs = fetch(a["check"])
             cp = [(d, v) for d, v in cp if v is not None]
-            check = cross_check(dates, values, cp[-40:], a["kind"], a["same"])
+            check = cross_check(dates, values, sorted(cp, key=lambda x: x[0] or "")[-40:], a["kind"],
+                                a["same"], a.get("tol"))
             check.update(source=cs)
         except Exception as e:  # noqa: BLE001
             check = {"status": "lỗi nguồn đối chiếu", "error": f"{type(e).__name__}: {str(e)[:160]}"}
