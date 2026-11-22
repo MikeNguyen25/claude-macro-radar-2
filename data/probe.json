@@ -1,17 +1,17 @@
 {
  "schema": "probe/1",
- "generated_at": "2026-11-22T09:20:08Z",
- "duration_s": 35,
+ "generated_at": "2026-11-22T09:25:51Z",
+ "duration_s": 25,
  "runner": {
   "python": "3.12.16",
   "platform": "Linux-7.0.0-1020-azure-x86_64-with-glibc2.43",
-  "github_run_id": "45007005979",
+  "github_run_id": "45007486104",
   "runner_os": "Linux",
   "fred_api_key": false
  },
  "summary": {
-  "total": 101,
-  "ok": 93
+  "total": 108,
+  "ok": 99
  },
  "results": [
   {
@@ -22,7 +22,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 116,
+   "ms": 56,
    "ua": "curl",
    "n": 945,
    "first": "1948-01-01",
@@ -31,7 +31,7 @@
    "freq": "M",
    "span_years": 78.7,
    "age_days": 52,
-   "ms_total": 119
+   "ms_total": 64
   },
   {
    "id": "meta.fred_ua_bot",
@@ -41,7 +41,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 143,
+   "ms": 51,
    "ua": "bot",
    "n": 945,
    "first": "1948-01-01",
@@ -50,7 +50,7 @@
    "freq": "M",
    "span_years": 78.7,
    "age_days": 52,
-   "ms_total": 144
+   "ms_total": 53
   },
   {
    "id": "meta.fred_ua_browser",
@@ -60,7 +60,7 @@
    "host": "fred.stlouisfed.org",
    "ok": false,
    "error": "ReadTimeout: HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=15)",
-   "ms_total": 15016
+   "ms_total": 15008
   },
   {
    "id": "us.gdp_real",
@@ -70,7 +70,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 77,
+   "ms": 26,
    "header": "observation_date,GDPC1",
    "n": 319,
    "first": "1947-01-01",
@@ -79,7 +79,7 @@
    "freq": "Q",
    "span_years": 79.5,
    "age_days": 144,
-   "ms_total": 77
+   "ms_total": 27
   },
   {
    "id": "us.unrate",
@@ -89,7 +89,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 19,
+   "ms": 22,
    "header": "observation_date,UNRATE",
    "n": 945,
    "first": "1948-01-01",
@@ -102,7 +102,7 @@
    "missing_recent": [
     "2025-10-01"
    ],
-   "ms_total": 21
+   "ms_total": 24
   },
   {
    "id": "us.payems",
@@ -112,7 +112,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 20,
+   "ms": 15,
    "header": "observation_date,PAYEMS",
    "n": 1054,
    "first": "1939-01-01",
@@ -121,7 +121,7 @@
    "freq": "M",
    "span_years": 87.7,
    "age_days": 52,
-   "ms_total": 22
+   "ms_total": 17
   },
   {
    "id": "us.icsa",
@@ -131,7 +131,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 28,
+   "ms": 12,
    "header": "observation_date,ICSA",
    "n": 3124,
    "first": "1967-01-07",
@@ -140,7 +140,7 @@
    "freq": "W",
    "span_years": 59.9,
    "age_days": 8,
-   "ms_total": 32
+   "ms_total": 16
   },
   {
    "id": "us.cpi",
@@ -150,7 +150,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 17,
+   "ms": 15,
    "header": "observation_date,CPIAUCSL",
    "n": 957,
    "first": "1947-01-01",
@@ -163,7 +163,7 @@
    "missing_recent": [
     "2025-10-01"
    ],
-   "ms_total": 18
+   "ms_total": 17
   },
   {
    "id": "us.core_pce",
@@ -173,7 +173,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 17,
+   "ms": 11,
    "header": "observation_date,PCEPILFE",
    "n": 813,
    "first": "1959-01-01",
@@ -182,7 +182,7 @@
    "freq": "M",
    "span_years": 67.7,
    "age_days": 82,
-   "ms_total": 18
+   "ms_total": 13
   },
   {
    "id": "us.be5y",
@@ -192,7 +192,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 22,
+   "ms": 19,
    "header": "observation_date,T5YIE",
    "n": 5976,
    "first": "2003-01-02",
@@ -216,7 +216,7 @@
     "2026-10-12",
     "2026-11-11"
    ],
-   "ms_total": 29
+   "ms_total": 27
   },
   {
    "id": "us.dff",
@@ -226,7 +226,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 38,
+   "ms": 14,
    "header": "observation_date,DFF",
    "n": 26440,
    "first": "1954-07-01",
@@ -235,7 +235,7 @@
    "freq": "D",
    "span_years": 72.4,
    "age_days": 3,
-   "ms_total": 61
+   "ms_total": 45
   },
   {
    "id": "us.dgs2",
@@ -245,7 +245,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 18,
+   "ms": 17,
    "header": "observation_date,DGS2",
    "n": 12614,
    "first": "1976-06-01",
@@ -269,7 +269,7 @@
     "2026-10-12",
     "2026-11-11"
    ],
-   "ms_total": 31
+   "ms_total": 33
   },
   {
    "id": "us.dgs10",
@@ -279,7 +279,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 23,
+   "ms": 13,
    "header": "observation_date,DGS10",
    "n": 16206,
    "first": "1962-01-02",
@@ -303,7 +303,7 @@
     "2026-10-12",
     "2026-11-11"
    ],
-   "ms_total": 38
+   "ms_total": 41
   },
   {
    "id": "us.t10y2y",
@@ -313,7 +313,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 18,
+   "ms": 16,
    "header": "observation_date,T10Y2Y",
    "n": 12615,
    "first": "1976-06-01",
@@ -337,7 +337,7 @@
     "2026-10-12",
     "2026-11-11"
    ],
-   "ms_total": 45
+   "ms_total": 32
   },
   {
    "id": "us.t10y3m",
@@ -347,7 +347,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 17,
+   "ms": 14,
    "header": "observation_date,T10Y3M",
    "n": 11224,
    "first": "1982-01-04",
@@ -381,7 +381,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 20,
+   "ms": 11,
    "header": "observation_date,NFCI",
    "n": 2915,
    "first": "1971-01-08",
@@ -390,7 +390,7 @@
    "freq": "W",
    "span_years": 55.8,
    "age_days": 9,
-   "ms_total": 23
+   "ms_total": 14
   },
   {
    "id": "us.hy_oas",
@@ -400,7 +400,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 16,
+   "ms": 11,
    "header": "observation_date,BAMLH0A0HYM2",
    "n": 786,
    "first": "2023-11-21",
@@ -417,7 +417,7 @@
     "2025-12-25",
     "2026-01-01"
    ],
-   "ms_total": 17
+   "ms_total": 13
   },
   {
    "id": "us.baa10y",
@@ -427,7 +427,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 19,
+   "ms": 15,
    "header": "observation_date,BAA10Y",
    "n": 10221,
    "first": "1986-01-02",
@@ -451,7 +451,7 @@
     "2026-10-12",
     "2026-11-11"
    ],
-   "ms_total": 30
+   "ms_total": 29
   },
   {
    "id": "us.usd_broad",
@@ -461,7 +461,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 24,
+   "ms": 12,
    "header": "observation_date,DTWEXBGS",
    "n": 5231,
    "first": "2006-01-02",
@@ -485,7 +485,7 @@
     "2026-10-12",
     "2026-11-11"
    ],
-   "ms_total": 30
+   "ms_total": 19
   },
   {
    "id": "us.pmi_philly",
@@ -495,7 +495,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 257,
+   "ms": 218,
    "header": "observation_date,GACDFSA066MSFRBPHI",
    "n": 703,
    "first": "1968-05-01",
@@ -504,7 +504,7 @@
    "freq": "M",
    "span_years": 58.5,
    "age_days": 21,
-   "ms_total": 258
+   "ms_total": 219
   },
   {
    "id": "us.cfnai",
@@ -514,7 +514,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 210,
+   "ms": 212,
    "header": "observation_date,CFNAI",
    "n": 715,
    "first": "1967-03-01",
@@ -523,7 +523,7 @@
    "freq": "M",
    "span_years": 59.5,
    "age_days": 82,
-   "ms_total": 211
+   "ms_total": 214
   },
   {
    "id": "us.bci_oecd",
@@ -533,7 +533,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 231,
+   "ms": 251,
    "header": "observation_date,BSCICP03USM665S",
    "n": 889,
    "first": "1950-01-01",
@@ -542,7 +542,7 @@
    "freq": "M",
    "span_years": 74.0,
    "age_days": 1056,
-   "ms_total": 232
+   "ms_total": 253
   },
   {
    "id": "px.nasdaq_fred",
@@ -552,7 +552,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 20,
+   "ms": 14,
    "header": "observation_date,NASDAQCOM",
    "n": 14067,
    "first": "1971-02-05",
@@ -576,7 +576,7 @@
     "2026-06-19",
     "2026-07-03"
    ],
-   "ms_total": 34
+   "ms_total": 33
   },
   {
    "id": "px.spx_fred",
@@ -586,7 +586,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 15,
+   "ms": 12,
    "header": "observation_date,SP500",
    "n": 2513,
    "first": "2016-11-21",
@@ -610,7 +610,7 @@
     "2026-07-03",
     "2026-09-07"
    ],
-   "ms_total": 18
+   "ms_total": 16
   },
   {
    "id": "px.brent_fred",
@@ -620,7 +620,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 17,
+   "ms": 12,
    "header": "observation_date,DCOILBRENTEU",
    "n": 9132,
    "first": "1987-05-20",
@@ -644,7 +644,7 @@
     "2026-05-25",
     "2026-08-31"
    ],
-   "ms_total": 27
+   "ms_total": 24
   },
   {
    "id": "cn.usdcny_fred",
@@ -654,7 +654,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 39,
+   "ms": 12,
    "header": "observation_date,DEXCHUS",
    "n": 11449,
    "first": "1981-01-02",
@@ -678,7 +678,7 @@
     "2026-10-12",
     "2026-11-11"
    ],
-   "ms_total": 50
+   "ms_total": 27
   },
   {
    "id": "cn.cpi_oecd_fred",
@@ -688,7 +688,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 220,
+   "ms": 12,
    "header": "observation_date,CHNCPIALLMINMEI",
    "n": 388,
    "first": "1993-01-01",
@@ -697,7 +697,7 @@
    "freq": "M",
    "span_years": 32.2,
    "age_days": 600,
-   "ms_total": 221
+   "ms_total": 13
   },
   {
    "id": "world.jp_call_fred",
@@ -707,7 +707,7 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 39,
+   "ms": 11,
    "header": "observation_date,IRSTCI01JPM156N",
    "n": 496,
    "first": "1985-07-01",
@@ -716,7 +716,7 @@
    "freq": "M",
    "span_years": 41.3,
    "age_days": 52,
-   "ms_total": 40
+   "ms_total": 12
   },
   {
    "id": "us.fred_vintage",
@@ -726,13 +726,13 @@
    "host": "fred.stlouisfed.org",
    "ok": true,
    "status": 200,
-   "ms": 427,
+   "ms": 458,
    "vintage_date": "2020-02-10",
    "vintage_last_obs": "2026-10-01",
    "value_2019_12_vintage": "151794",
    "value_2019_12_current": "151794",
    "vintage_works": false,
-   "ms_total": 752
+   "ms_total": 772
   },
   {
    "id": "meta.fred_api_nokey",
@@ -742,10 +742,10 @@
    "host": "api.stlouisfed.org",
    "ok": true,
    "status": 400,
-   "ms": 188,
+   "ms": 498,
    "snippet": "{\"error_code\":400,\"error_message\":\"Bad Request. Variable api_key is not set. Read https:\\/\\/fred.stlouisfed.org\\/docs\\/api\\/api_key.html for more information.\"}",
    "note": "mã 400 = API trả lời, chỉ thiếu api_key",
-   "ms_total": 188
+   "ms_total": 501
   },
   {
    "id": "px.btc_binance",
@@ -755,7 +755,7 @@
    "host": "data-api.binance.vision",
    "ok": true,
    "status": 200,
-   "ms": 1572,
+   "ms": 1492,
    "first": "2017-08-17",
    "last": "2026-11-21",
    "last_value": 60215.77,
@@ -764,7 +764,7 @@
    "span_years": 9.3,
    "age_days": 1,
    "note": "nến ngày UTC; n = số ngày",
-   "ms_total": 1873
+   "ms_total": 1796
   },
   {
    "id": "px.eth_binance",
@@ -774,7 +774,7 @@
    "host": "data-api.binance.vision",
    "ok": true,
    "status": 200,
-   "ms": 687,
+   "ms": 845,
    "first": "2017-08-17",
    "last": "2026-11-21",
    "last_value": 1685.63,
@@ -783,7 +783,7 @@
    "span_years": 9.3,
    "age_days": 1,
    "note": "nến ngày UTC; n = số ngày",
-   "ms_total": 988
+   "ms_total": 1146
   },
   {
    "id": "px.sol_binance",
@@ -793,7 +793,7 @@
    "host": "data-api.binance.vision",
    "ok": true,
    "status": 200,
-   "ms": 298,
+   "ms": 320,
    "first": "2020-08-11",
    "last": "2026-11-21",
    "last_value": 70.31,
@@ -802,7 +802,7 @@
    "span_years": 6.3,
    "age_days": 1,
    "note": "nến ngày UTC; n = số ngày",
-   "ms_total": 598
+   "ms_total": 621
   },
   {
    "id": "px.doge_binance",
@@ -812,7 +812,7 @@
    "host": "data-api.binance.vision",
    "ok": true,
    "status": 200,
-   "ms": 274,
+   "ms": 321,
    "first": "2019-07-05",
    "last": "2026-11-21",
    "last_value": 0.0553,
@@ -821,7 +821,7 @@
    "span_years": 7.4,
    "age_days": 1,
    "note": "nến ngày UTC; n = số ngày",
-   "ms_total": 574
+   "ms_total": 622
   },
   {
    "id": "px.trx_binance",
@@ -831,7 +831,7 @@
    "host": "data-api.binance.vision",
    "ok": true,
    "status": 200,
-   "ms": 274,
+   "ms": 321,
    "first": "2018-06-11",
    "last": "2026-11-21",
    "last_value": 0.3054,
@@ -840,7 +840,7 @@
    "span_years": 8.4,
    "age_days": 1,
    "note": "nến ngày UTC; n = số ngày",
-   "ms_total": 575
+   "ms_total": 622
   },
   {
    "id": "px.paxg_binance",
@@ -850,7 +850,7 @@
    "host": "data-api.binance.vision",
    "ok": true,
    "status": 200,
-   "ms": 275,
+   "ms": 320,
    "first": "2020-08-28",
    "last": "2026-11-21",
    "last_value": 3554.94,
@@ -859,7 +859,7 @@
    "span_years": 6.2,
    "age_days": 1,
    "note": "nến ngày UTC; n = số ngày",
-   "ms_total": 576
+   "ms_total": 621
   },
   {
    "id": "px.btc_cm",
@@ -869,7 +869,7 @@
    "host": "community-api.coinmetrics.io",
    "ok": true,
    "status": 200,
-   "ms": 32093,
+   "ms": 11084,
    "first": "2010-07-18",
    "last": "2026-11-21",
    "last_value": 60122.6111387551,
@@ -878,7 +878,7 @@
    "span_years": 16.3,
    "age_days": 1,
    "note": "n = số ngày từ đầu tới cuối",
-   "ms_total": 32795
+   "ms_total": 11789
   },
   {
    "id": "px.sol_cm",
@@ -888,7 +888,7 @@
    "host": "community-api.coinmetrics.io",
    "ok": true,
    "status": 200,
-   "ms": 199,
+   "ms": 95,
    "first": "2020-04-10",
    "last": "2026-11-21",
    "last_value": 70.1834853890689,
@@ -897,7 +897,7 @@
    "span_years": 6.6,
    "age_days": 1,
    "note": "n = số ngày từ đầu tới cuối",
-   "ms_total": 900
+   "ms_total": 795
   },
   {
    "id": "px.trx_cm",
@@ -907,7 +907,7 @@
    "host": "community-api.coinmetrics.io",
    "ok": true,
    "status": 200,
-   "ms": 96,
+   "ms": 53,
    "first": "2018-06-25",
    "last": "2026-11-21",
    "last_value": 0.304791153152675,
@@ -916,7 +916,7 @@
    "span_years": 8.4,
    "age_days": 1,
    "note": "n = số ngày từ đầu tới cuối",
-   "ms_total": 797
+   "ms_total": 754
   },
   {
    "id": "px.btc_kraken",
@@ -926,17 +926,17 @@
    "host": "api.kraken.com",
    "ok": true,
    "status": 200,
-   "ms": 158,
+   "ms": 69,
    "pair_key": "XXBTZUSD",
    "note": "chỉ 720 nến gần nhất; nến cuối là ngày đang chạy",
    "n": 721,
    "first": "2024-12-02",
    "last": "2026-11-22",
-   "last_value": 59932.7,
+   "last_value": 59859.0,
    "freq": "D",
    "span_years": 2.0,
    "age_days": 0,
-   "ms_total": 159
+   "ms_total": 73
   },
   {
    "id": "px.crypto_cg_simple",
@@ -946,16 +946,16 @@
    "host": "api.coingecko.com",
    "ok": true,
    "status": 200,
-   "ms": 963,
+   "ms": 164,
    "values": {
-    "bitcoin": 59705,
-    "ethereum": 1682.99,
-    "solana": 69.66,
-    "dogecoin": 0.05471,
-    "tron": 0.304166
+    "bitcoin": 59951,
+    "ethereum": 1690.27,
+    "solana": 69.94,
+    "dogecoin": 0.054954,
+    "tron": 0.30451
    },
    "last": "2026-11-22",
-   "ms_total": 963
+   "ms_total": 165
   },
   {
    "id": "px.spx_yahoo",
@@ -966,10 +966,10 @@
    "ok": false,
    "error": "Yahoo lỗi: Too Many Requests",
    "status": 429,
-   "ms": 142,
+   "ms": 43,
    "content_type": "text/html",
    "snippet": "Too Many Requests",
-   "ms_total": 142
+   "ms_total": 43
   },
   {
    "id": "px.spx_stooq",
@@ -980,10 +980,10 @@
    "ok": false,
    "error": "Stooq không trả CSV (cần apikey)",
    "status": 200,
-   "ms": 623,
+   "ms": 487,
    "content_type": "text/html; charset=utf-8",
-   "snippet": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"robots\" content=\"noindex,nofollow\"></head><body><noscript>This site requires JavaScript to verify your browser. Please enable JavaScript and reload.</noscript><script nonce=\"0Ix-Q",
-   "ms_total": 625
+   "snippet": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"robots\" content=\"noindex,nofollow\"></head><body><noscript>This site requires JavaScript to verify your browser. Please enable JavaScript and reload.</noscript><script nonce=\"-a1Ld",
+   "ms_total": 489
   },
   {
    "id": "px.cnbc_quote",
@@ -993,7 +993,7 @@
    "host": "quote.cnbc.com",
    "ok": true,
    "status": 200,
-   "ms": 197,
+   "ms": 126,
    "quotes": {
     ".STI": {
      "last": "4,975.17",
@@ -1042,7 +1042,7 @@
     }
    },
    "note": "chỉ có giá hiện tại",
-   "ms_total": 197
+   "ms_total": 126
   },
   {
    "id": "px.cnbc_bars_sti",
@@ -1052,7 +1052,7 @@
    "host": "ts-api.cnbc.com",
    "ok": true,
    "status": 200,
-   "ms": 1007,
+   "ms": 142,
    "n": 6864,
    "first": "1999-08-31",
    "last": "2026-11-20",
@@ -1060,7 +1060,7 @@
    "freq": "D",
    "span_years": 27.2,
    "age_days": 2,
-   "ms_total": 1021
+   "ms_total": 160
   },
   {
    "id": "px.cnbc_bars_seti",
@@ -1070,7 +1070,7 @@
    "host": "ts-api.cnbc.com",
    "ok": true,
    "status": 200,
-   "ms": 2955,
+   "ms": 175,
    "n": 9012,
    "first": "1990-01-02",
    "last": "2026-11-20",
@@ -1078,7 +1078,7 @@
    "freq": "D",
    "span_years": 36.9,
    "age_days": 2,
-   "ms_total": 2969
+   "ms_total": 199
   },
   {
    "id": "px.cnbc_bars_spx",
@@ -1088,7 +1088,7 @@
    "host": "ts-api.cnbc.com",
    "ok": true,
    "status": 200,
-   "ms": 546,
+   "ms": 467,
    "n": 9292,
    "first": "1990-01-02",
    "last": "2026-11-20",
@@ -1096,7 +1096,7 @@
    "freq": "D",
    "span_years": 36.9,
    "age_days": 2,
-   "ms_total": 560
+   "ms_total": 488
   },
   {
    "id": "px.cnbc_bars_lco_1",
@@ -1106,7 +1106,7 @@
    "host": "ts-api.cnbc.com",
    "ok": true,
    "status": 200,
-   "ms": 4086,
+   "ms": 466,
    "n": 9234,
    "first": "1990-10-09",
    "last": "2026-11-20",
@@ -1114,7 +1114,7 @@
    "freq": "D",
    "span_years": 36.1,
    "age_days": 2,
-   "ms_total": 4102
+   "ms_total": 485
   },
   {
    "id": "px.cnbc_bars_gc_1",
@@ -1124,7 +1124,7 @@
    "host": "ts-api.cnbc.com",
    "ok": true,
    "status": 200,
-   "ms": 918,
+   "ms": 427,
    "n": 9303,
    "first": "1990-01-02",
    "last": "2026-11-20",
@@ -1132,7 +1132,7 @@
    "freq": "D",
    "span_years": 36.9,
    "age_days": 2,
-   "ms_total": 934
+   "ms_total": 447
   },
   {
    "id": "px.cnbc_bars_dxy",
@@ -1142,7 +1142,7 @@
    "host": "ts-api.cnbc.com",
    "ok": true,
    "status": 200,
-   "ms": 769,
+   "ms": 811,
    "n": 9692,
    "first": "1990-01-01",
    "last": "2026-11-20",
@@ -1150,7 +1150,7 @@
    "freq": "D",
    "span_years": 36.9,
    "age_days": 2,
-   "ms_total": 784
+   "ms_total": 833
   },
   {
    "id": "px.vnindex_dnse",
@@ -1160,7 +1160,7 @@
    "host": "services.entrade.com.vn",
    "ok": true,
    "status": 200,
-   "ms": 2085,
+   "ms": 2423,
    "n": 6369,
    "first": "2000-07-28",
    "last": "2026-11-20",
@@ -1168,7 +1168,7 @@
    "freq": "D",
    "span_years": 26.3,
    "age_days": 2,
-   "ms_total": 2095
+   "ms_total": 2436
   },
   {
    "id": "px.vnindex_vndirect",
@@ -1178,7 +1178,7 @@
    "host": "dchart-api.vndirect.com.vn",
    "ok": true,
    "status": 200,
-   "ms": 2345,
+   "ms": 2642,
    "n": 2307,
    "first": "2017-08-24",
    "last": "2026-11-20",
@@ -1186,7 +1186,7 @@
    "freq": "D",
    "span_years": 9.2,
    "age_days": 2,
-   "ms_total": 2349
+   "ms_total": 2647
   },
   {
    "id": "vn.foreign_cafef",
@@ -1196,7 +1196,7 @@
    "host": "s.cafef.vn",
    "ok": true,
    "status": 200,
-   "ms": 3693,
+   "ms": 3522,
    "n": 99574,
    "fields": [
     "Symbol",
@@ -1215,7 +1215,7 @@
    "last": "2026-11-20",
    "age_days": 2,
    "first": "2026-11-20",
-   "ms_total": 5809
+   "ms_total": 7633
   },
   {
    "id": "px.set_setweb",
@@ -1226,10 +1226,10 @@
    "ok": false,
    "error": "set.or.th API lỗi",
    "status": 403,
-   "ms": 335,
+   "ms": 53,
    "content_type": "text/html",
    "snippet": "<html style=\"height:100%\"><head><META NAME=\"ROBOTS\" CONTENT=\"NOINDEX, NOFOLLOW\"><meta name=\"format-detection\" content=\"telephone=no\"><meta name=\"viewport\" content=\"initial-scale=1.0\"><meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge,chrom",
-   "ms_total": 336
+   "ms_total": 53
   },
   {
    "id": "px.commodity_pink",
@@ -1239,7 +1239,7 @@
    "host": "thedocs.worldbank.org",
    "ok": true,
    "status": 200,
-   "ms": 150,
+   "ms": 117,
    "bytes": 765246,
    "brent": {
     "n": 780,
@@ -1262,7 +1262,7 @@
    "first": "1960-01-01",
    "last": "2024-12-01",
    "freq": "M",
-   "ms_total": 533
+   "ms_total": 674
   },
   {
    "id": "px.brent_eia",
@@ -1272,11 +1272,11 @@
    "host": "www.eia.gov",
    "ok": true,
    "status": 200,
-   "ms": 230,
+   "ms": 106,
    "bytes": 453632,
    "content_type": "application/vnd.ms-excel",
    "note": "Brent ngày từ EIA (file .xls, cần xlrd để đọc)",
-   "ms_total": 230
+   "ms_total": 106
   },
   {
    "id": "px.gold_lbma_pm",
@@ -1287,10 +1287,10 @@
    "ok": false,
    "error": "LBMA không trả JSON",
    "status": 403,
-   "ms": 76,
+   "ms": 40,
    "content_type": "text/html; charset=UTF-8",
    "snippet": "<!DOCTYPE html> <!--[if lt IE 7]> <html class=\"no-js ie6 oldie\" lang=\"en-US\"> <![endif]--> <!--[if IE 7]> <html class=\"no-js ie7 oldie\" lang=\"en-US\"> <![endif]--> <!--[if IE 8]> <html class=\"no-js ie8 oldie\" lang=\"en-US\"> <![endif]--> <!--[",
-   "ms_total": 77
+   "ms_total": 40
   },
   {
    "id": "px.gold_fawaz",
@@ -1300,11 +1300,11 @@
    "host": "cdn.jsdelivr.net",
    "ok": true,
    "status": 200,
-   "ms": 60,
+   "ms": 28,
    "last": "2026-11-21",
    "last_value": 0.0002830602,
    "note": "1 USD đổi ra ounce vàng",
-   "ms_total": 60
+   "ms_total": 28
   },
   {
    "id": "px.gold_fawaz_2024",
@@ -1314,11 +1314,11 @@
    "host": "cdn.jsdelivr.net",
    "ok": true,
    "status": 200,
-   "ms": 274,
+   "ms": 23,
    "last": "2024-03-06",
    "last_value": 0.0004700036,
    "note": "1 USD đổi ra ounce vàng",
-   "ms_total": 275
+   "ms_total": 23
   },
   {
    "id": "px.usdvnd_vcb",
@@ -1328,13 +1328,13 @@
    "host": "portal.vietcombank.com.vn",
    "ok": true,
    "status": 200,
-   "ms": 528,
+   "ms": 793,
    "last": "11/22/2026 4:12:40 PM",
    "last_value": "25,980.00",
    "buy": "25,570.00",
    "transfer": "25,600.00",
    "note": "chỉ có tỷ giá hiện tại",
-   "ms_total": 529
+   "ms_total": 794
   },
   {
    "id": "px.usdvnd_erapi",
@@ -1344,11 +1344,11 @@
    "host": "open.er-api.com",
    "ok": true,
    "status": 200,
-   "ms": 93,
+   "ms": 78,
    "last_value": 25783.122794,
    "last": "Sun, 22 Nov 2026 00:02:32 +0000",
    "note": "chỉ có tỷ giá mới nhất",
-   "ms_total": 94
+   "ms_total": 78
   },
   {
    "id": "px.usdvnd_fawaz",
@@ -1358,11 +1358,11 @@
    "host": "cdn.jsdelivr.net",
    "ok": true,
    "status": 200,
-   "ms": 14,
+   "ms": 21,
    "last": "2026-11-21",
    "last_value": 25735.23353095,
    "note": "1 USD đổi ra VND",
-   "ms_total": 14
+   "ms_total": 21
   },
   {
    "id": "px.usdvnd_fawaz_2024",
@@ -1372,11 +1372,11 @@
    "host": "cdn.jsdelivr.net",
    "ok": true,
    "status": 200,
-   "ms": 15,
+   "ms": 8,
    "last": "2024-03-06",
    "last_value": 24803.92523426,
    "note": "1 USD đổi ra VND",
-   "ms_total": 15
+   "ms_total": 8
   },
   {
    "id": "px.ust10y_treasury",
@@ -1386,7 +1386,7 @@
    "host": "home.treasury.gov",
    "ok": true,
    "status": 200,
-   "ms": 294,
+   "ms": 226,
    "note": "mỗi lần gọi một năm (2026)",
    "n": 223,
    "first": "2026-01-02",
@@ -1395,7 +1395,7 @@
    "freq": "D",
    "span_years": 0.9,
    "age_days": 2,
-   "ms_total": 295
+   "ms_total": 238
   },
   {
    "id": "px.ust10y_treasury_1990",
@@ -1405,7 +1405,7 @@
    "host": "home.treasury.gov",
    "ok": true,
    "status": 200,
-   "ms": 284,
+   "ms": 255,
    "note": "mỗi lần gọi một năm (1990)",
    "n": 250,
    "first": "1990-01-02",
@@ -1414,7 +1414,7 @@
    "freq": "D",
    "span_years": 1.0,
    "age_days": 13110,
-   "ms_total": 285
+   "ms_total": 260
   },
   {
    "id": "px.vix_cboe",
@@ -1424,7 +1424,7 @@
    "host": "cdn.cboe.com",
    "ok": true,
    "status": 200,
-   "ms": 212,
+   "ms": 209,
    "n": 9321,
    "first": "1990-01-02",
    "last": "2026-11-20",
@@ -1432,7 +1432,7 @@
    "freq": "D",
    "span_years": 36.9,
    "age_days": 2,
-   "ms_total": 273
+   "ms_total": 278
   },
   {
    "id": "px.dxy_ecb",
@@ -1442,7 +1442,7 @@
    "host": "data-api.ecb.europa.eu",
    "ok": true,
    "status": 200,
-   "ms": 3072,
+   "ms": 2324,
    "currencies": {
     "CAD": {
      "n": 7141,
@@ -1505,7 +1505,7 @@
    "freq": "D",
    "age_days": 2,
    "note": "đủ 6 đồng tiền thì tính được DXY tổng hợp",
-   "ms_total": 3256
+   "ms_total": 2594
   },
   {
    "id": "vn.stock_gem",
@@ -1515,7 +1515,7 @@
    "host": "api.worldbank.org",
    "ok": true,
    "status": 200,
-   "ms": 137,
+   "ms": 56,
    "params": {
     "frequency": "M"
    },
@@ -1527,7 +1527,7 @@
    "freq": "A",
    "span_years": 26.0,
    "age_days": 325,
-   "ms_total": 1451
+   "ms_total": 1004
   },
   {
    "id": "vn.cpi_gem",
@@ -1537,7 +1537,7 @@
    "host": "api.worldbank.org",
    "ok": true,
    "status": 200,
-   "ms": 67,
+   "ms": 17,
    "params": {
     "frequency": "M"
    },
@@ -1549,7 +1549,7 @@
    "freq": "A",
    "span_years": 30.0,
    "age_days": 325,
-   "ms_total": 1793
+   "ms_total": 960
   },
   {
    "id": "vn.ip_gem",
@@ -1559,7 +1559,7 @@
    "host": "api.worldbank.org",
    "ok": true,
    "status": 200,
-   "ms": 64,
+   "ms": 18,
    "params": {
     "frequency": "M"
    },
@@ -1571,7 +1571,7 @@
    "freq": "A",
    "span_years": 17.0,
    "age_days": 690,
-   "ms_total": 1436
+   "ms_total": 1002
   },
   {
    "id": "vn.exports_gem",
@@ -1581,7 +1581,7 @@
    "host": "api.worldbank.org",
    "ok": true,
    "status": 200,
-   "ms": 66,
+   "ms": 15,
    "params": {
     "frequency": "M"
    },
@@ -1593,7 +1593,7 @@
    "freq": "A",
    "span_years": 34.0,
    "age_days": 690,
-   "ms_total": 1488
+   "ms_total": 969
   },
   {
    "id": "vn.fx_gem",
@@ -1603,7 +1603,7 @@
    "host": "api.worldbank.org",
    "ok": true,
    "status": 200,
-   "ms": 54,
+   "ms": 16,
    "params": {
     "frequency": "M"
    },
@@ -1615,7 +1615,7 @@
    "freq": "A",
    "span_years": 39.0,
    "age_days": 325,
-   "ms_total": 1264
+   "ms_total": 947
   },
   {
    "id": "px.set_gem",
@@ -1625,7 +1625,7 @@
    "host": "api.worldbank.org",
    "ok": true,
    "status": 200,
-   "ms": 71,
+   "ms": 16,
    "params": {
     "frequency": "M"
    },
@@ -1637,7 +1637,7 @@
    "freq": "A",
    "span_years": 31.0,
    "age_days": 325,
-   "ms_total": 1389
+   "ms_total": 963
   },
   {
    "id": "px.sti_gem",
@@ -1647,7 +1647,7 @@
    "host": "api.worldbank.org",
    "ok": true,
    "status": 200,
-   "ms": 56,
+   "ms": 19,
    "params": {
     "frequency": "M"
    },
@@ -1659,7 +1659,7 @@
    "freq": "A",
    "span_years": 36.0,
    "age_days": 325,
-   "ms_total": 1433
+   "ms_total": 957
   },
   {
    "id": "cn.ip_gem",
@@ -1669,7 +1669,7 @@
    "host": "api.worldbank.org",
    "ok": true,
    "status": 200,
-   "ms": 64,
+   "ms": 18,
    "params": {
     "frequency": "M"
    },
@@ -1681,7 +1681,7 @@
    "freq": "A",
    "span_years": 28.0,
    "age_days": 690,
-   "ms_total": 1362
+   "ms_total": 980
   },
   {
    "id": "meta.dbn_providers",
@@ -1691,7 +1691,7 @@
    "host": "api.db.nomics.world",
    "ok": true,
    "status": 200,
-   "ms": 662,
+   "ms": 514,
    "n": 94,
    "present": {
     "NBS": true,
@@ -1805,7 +1805,7 @@
     "oppins",
     "pole-emploi"
    ],
-   "ms_total": 663
+   "ms_total": 515
   },
   {
    "id": "meta.dbn_cn_pmi",
@@ -1815,7 +1815,7 @@
    "host": "api.db.nomics.world",
    "ok": true,
    "status": 200,
-   "ms": 607,
+   "ms": 311,
    "hits": [
     {
      "provider": "NBS",
@@ -1834,7 +1834,7 @@
      "indexed_at": "2026-03-08"
     }
    ],
-   "ms_total": 607
+   "ms_total": 312
   },
   {
    "id": "meta.dbn_vn_ip",
@@ -1844,7 +1844,7 @@
    "host": "api.db.nomics.world",
    "ok": true,
    "status": 200,
-   "ms": 434,
+   "ms": 464,
    "hits": [
     {
      "provider": "FAO",
@@ -1911,7 +1911,7 @@
      "indexed_at": "2026-01-16"
     }
    ],
-   "ms_total": 434
+   "ms_total": 464
   },
   {
    "id": "meta.dbn_vn_cpi",
@@ -1921,7 +1921,7 @@
    "host": "api.db.nomics.world",
    "ok": true,
    "status": 200,
-   "ms": 447,
+   "ms": 449,
    "hits": [
     {
      "provider": "IMF",
@@ -1988,7 +1988,7 @@
      "indexed_at": "2024-01-01"
     }
    ],
-   "ms_total": 447
+   "ms_total": 449
   },
   {
    "id": "meta.dbn_vn_rate",
@@ -1998,7 +1998,7 @@
    "host": "api.db.nomics.world",
    "ok": true,
    "status": 200,
-   "ms": 403,
+   "ms": 407,
    "hits": [
     {
      "provider": "OECD",
@@ -2033,7 +2033,7 @@
      "indexed_at": "2024-06-29"
     }
    ],
-   "ms_total": 403
+   "ms_total": 407
   },
   {
    "id": "meta.dbn_vn_bond",
@@ -2044,10 +2044,10 @@
    "ok": false,
    "error": "DBnomics search không có kết quả",
    "status": 200,
-   "ms": 268,
+   "ms": 273,
    "content_type": "application/json",
    "snippet": "{\"_meta\":{\"args\":{\"limit\":8,\"offset\":0,\"q\":\"Viet Nam government bond yield\"},\"version\":\"22.1.17\"},\"results\":{\"docs\":[],\"limit\":8,\"num_found\":0,\"offset\":0}}",
-   "ms_total": 268
+   "ms_total": 273
   },
   {
    "id": "world.imf_weo",
@@ -2058,10 +2058,10 @@
    "ok": false,
    "error": "IMF DataMapper không trả số",
    "status": 403,
-   "ms": 105,
+   "ms": 61,
    "content_type": "text/html",
    "snippet": "<HTML><HEAD> <TITLE>Access Denied</TITLE> </HEAD><BODY> <H1>Access Denied</H1> You don't have permission to access \"http&#58;&#47;&#47;www&#46;imf&#46;org&#47;external&#47;datamapper&#47;api&#47;v1&#47;NGDP&#95;RPCH&#47;WEOWORLD\" on this se",
-   "ms_total": 106
+   "ms_total": 62
   },
   {
    "id": "meta.imf_sdmx",
@@ -2071,7 +2071,7 @@
    "host": "api.imf.org",
    "ok": true,
    "status": 200,
-   "ms": 439,
+   "ms": 337,
    "n": 233,
    "ids_sample": [
     "PSBS",
@@ -2155,7 +2155,822 @@
     "CCI",
     "WEO_2026_APR_VINTAGE"
    ],
-   "ms_total": 441
+   "ms_total": 340
+  },
+  {
+   "id": "vn.cpi_imf",
+   "group": "vn",
+   "series": "CPI Việt Nam (IMF)",
+   "source": "IMF SDMX CPI",
+   "host": "api.imf.org",
+   "ok": false,
+   "error": "ValueError: phản hồi quá 40 MB",
+   "ms_total": 1821
+  },
+  {
+   "id": "vn.fx_imf",
+   "group": "vn",
+   "series": {
+    "VNM.USD_XDC.EOP_RT.M": {
+     "n": 439,
+     "first": "1990-01-01",
+     "last": "2026-08-01",
+     "last_value": 3.904724716907458e-05,
+     "freq": "M",
+     "span_years": 36.6,
+     "age_days": 113
+    },
+    "VNM.USD_XDC.PA_RT.M": {
+     "n": 439,
+     "first": "1990-01-01",
+     "last": "2026-08-01",
+     "last_value": 3.916282414090471e-05,
+     "freq": "M",
+     "span_years": 36.6,
+     "age_days": 113
+    },
+    "VNM.XDC_USD.EOP_RT.M": {
+     "n": 439,
+     "first": "1990-01-01",
+     "last": "2026-08-01",
+     "last_value": 25610.0,
+     "freq": "M",
+     "span_years": 36.6,
+     "age_days": 113
+    },
+    "VNM.XDC_USD.PA_RT.M": {
+     "n": 439,
+     "first": "1990-01-01",
+     "last": "2026-08-01",
+     "last_value": 25534.42,
+     "freq": "M",
+     "span_years": 36.6,
+     "age_days": 113
+    },
+    "VNM.XDC_XDR.EOP_RT.M": {
+     "n": 439,
+     "first": "1990-01-01",
+     "last": "2026-08-01",
+     "last_value": 35056.93158080617,
+     "freq": "M",
+     "span_years": 36.6,
+     "age_days": 113
+    },
+    "VNM.XDC_XDR.PA_RT.M": {
+     "n": 439,
+     "first": "1990-01-01",
+     "last": "2026-08-01",
+     "last_value": 34950.30170333255,
+     "freq": "M",
+     "span_years": 36.6,
+     "age_days": 113
+    },
+    "VNM.XDR_XDC.EOP_RT.M": {
+     "n": 439,
+     "first": "1990-01-01",
+     "last": "2026-08-01",
+     "last_value": 2.852502928543537e-05,
+     "freq": "M",
+     "span_years": 36.6,
+     "age_days": 113
+    },
+    "VNM.XDR_XDC.PA_RT.M": {
+     "n": 439,
+     "first": "1990-01-01",
+     "last": "2026-08-01",
+     "last_value": 2.861205629892027e-05,
+     "freq": "M",
+     "span_years": 36.6,
+     "age_days": 113
+    },
+    "VNM.EUR_XDC.EOP_RT.M": {
+     "n": 331,
+     "first": "1999-01-01",
+     "last": "2026-08-01",
+     "last_value": 3.367303136346549e-05,
+     "freq": "M",
+     "span_years": 27.6,
+     "age_days": 113
+    },
+    "VNM.EUR_XDC.PA_RT.M": {
+     "n": 331,
+     "first": "1999-01-01",
+     "last": "2026-08-01",
+     "last_value": 3.378116312907924e-05,
+     "freq": "M",
+     "span_years": 27.6,
+     "age_days": 113
+    },
+    "VNM.XDC_EUR.EOP_RT.M": {
+     "n": 331,
+     "first": "1999-01-01",
+     "last": "2026-08-01",
+     "last_value": 29697.356,
+     "freq": "M",
+     "span_years": 27.6,
+     "age_days": 113
+    },
+    "VNM.XDC_EUR.PA_RT.M": {
+     "n": 331,
+     "first": "1999-01-01",
+     "last": "2026-08-01",
+     "last_value": 29602.29629095239,
+     "freq": "M",
+     "span_years": 27.6,
+     "age_days": 113
+    },
+    "VNM.ECU_XDC.EOP_RT.M": {
+     "n": 108,
+     "first": "1990-01-01",
+     "last": "1998-12-01",
+     "last_value": 6.170494147054908e-05,
+     "freq": "M",
+     "span_years": 8.9,
+     "age_days": 10218
+    },
+    "VNM.ECU_XDC.PA_RT.M": {
+     "n": 108,
+     "first": "1990-01-01",
+     "last": "1998-12-01",
+     "last_value": 6.145384462417486e-05,
+     "freq": "M",
+     "span_years": 8.9,
+     "age_days": 10218
+    },
+    "VNM.XDC_ECU.EOP_RT.M": {
+     "n": 108,
+     "first": "1990-01-01",
+     "last": "1998-12-01",
+     "last_value": 16206.1575,
+     "freq": "M",
+     "span_years": 8.9,
+     "age_days": 10218
+    },
+    "VNM.XDC_ECU.PA_RT.M": {
+     "n": 108,
+     "first": "1990-01-01",
+     "last": "1998-12-01",
+     "last_value": 16272.37492,
+     "freq": "M",
+     "span_years": 8.9,
+     "age_days": 10218
+    },
+    "VNM.USD_XDC.EOP_RT.Q": {
+     "n": 146,
+     "first": "1990-01-01",
+     "last": "2026-04-01",
+     "last_value": 3.967309370784734e-05,
+     "freq": "Q",
+     "span_years": 36.2,
+     "age_days": 235
+    },
+    "VNM.XDC_USD.EOP_RT.Q": {
+     "n": 146,
+     "first": "1990-01-01",
+     "last": "2026-04-01",
+     "last_value": 25206.0,
+     "freq": "Q",
+     "span_years": 36.2,
+     "age_days": 235
+    },
+    "VNM.XDC_XDR.EOP_RT.Q": {
+     "n": 146,
+     "first": "1990-01-01",
+     "last": "2026-04-01",
+     "last_value": 34181.93751890069,
+     "freq": "Q",
+     "span_years": 36.2,
+     "age_days": 235
+    },
+    "VNM.XDR_XDC.EOP_RT.Q": {
+     "n": 146,
+     "first": "1990-01-01",
+     "last": "2026-04-01",
+     "last_value": 2.925521701182258e-05,
+     "freq": "Q",
+     "span_years": 36.2,
+     "age_days": 235
+    },
+    "VNM.USD_XDC.PA_RT.Q": {
+     "n": 145,
+     "first": "1990-01-01",
+     "last": "2026-04-01",
+     "last_value": 3.97872179583587e-05,
+     "freq": "Q",
+     "span_years": 36.2,
+     "age_days": 235
+    },
+    "VNM.XDC_USD.PA_RT.Q": {
+     "n": 145,
+     "first": "1990-01-01",
+     "last": "2026-04-01",
+     "last_value": 25133.7,
+     "freq": "Q",
+     "span_years": 36.2,
+     "age_days": 235
+    },
+    "VNM.XDC_XDR.PA_RT.Q": {
+     "n": 145,
+     "first": "1990-01-01",
+     "last": "2026-04-01",
+     "last_value": 34367.70721409394,
+     "freq": "Q",
+     "span_years": 36.2,
+     "age_days": 235
+    },
+    "VNM.XDR_XDC.PA_RT.Q": {
+     "n": 145,
+     "first": "1990-01-01",
+     "last": "2026-04-01",
+     "last_value": 2.909708214663524e-05,
+     "freq": "Q",
+     "span_years": 36.2,
+     "age_days": 235
+    },
+    "VNM.EUR_XDC.EOP_RT.Q": {
+     "n": 110,
+     "first": "1999-01-01",
+     "last": "2026-04-01",
+     "last_value": 3.481928533249722e-05,
+     "freq": "Q",
+     "span_years": 27.2,
+     "age_days": 235
+    }
+   },
+   "source": "IMF SDMX ER",
+   "host": "api.imf.org",
+   "ok": true,
+   "status": 200,
+   "ms": 1028,
+   "dims": [
+    "COUNTRY",
+    "INDICATOR",
+    "TYPE_OF_TRANSFORMATION",
+    "FREQUENCY"
+   ],
+   "key": "VNM...",
+   "n_series": 48,
+   "n_monthly": 16,
+   "first": "1990-01-01",
+   "last": "2026-08-01",
+   "freq": "M",
+   "age_days": 113,
+   "ms_total": 1422
+  },
+  {
+   "id": "vn.rates_imf",
+   "group": "vn",
+   "series": {
+    "..": {
+     "n": 0
+    }
+   },
+   "source": "IMF SDMX MFS_IR",
+   "host": "api.imf.org",
+   "ok": true,
+   "status": 200,
+   "ms": 671,
+   "dims": [
+    "COUNTRY",
+    "INDICATOR",
+    "FREQUENCY"
+   ],
+   "key": "VNM..",
+   "n_series": 1,
+   "n_monthly": 0,
+   "first": null,
+   "last": null,
+   "freq": null,
+   "age_days": null,
+   "ms_total": 972
+  },
+  {
+   "id": "vn.markets_imf",
+   "group": "vn",
+   "series": {
+    "...": {
+     "n": 0
+    }
+   },
+   "source": "IMF SDMX MFS_FMP",
+   "host": "api.imf.org",
+   "ok": true,
+   "status": 200,
+   "ms": 706,
+   "dims": [
+    "COUNTRY",
+    "INDICATOR",
+    "TYPE_OF_TRANSFORMATION",
+    "FREQUENCY"
+   ],
+   "key": "VNM...",
+   "n_series": 1,
+   "n_monthly": 0,
+   "first": null,
+   "last": null,
+   "freq": null,
+   "age_days": null,
+   "ms_total": 1007
+  },
+  {
+   "id": "vn.ip_imf",
+   "group": "vn",
+   "series": {
+    "VNM.IND.IX.M": {
+     "n": 207,
+     "first": "2008-01-01",
+     "last": "2025-03-01",
+     "last_value": 108.8112950037043,
+     "freq": "M",
+     "span_years": 17.2,
+     "age_days": 631
+    },
+    "VNM.IND.POP_PCH_PT.M": {
+     "n": 206,
+     "first": "2008-02-01",
+     "last": "2025-03-01",
+     "last_value": 12.0195160545922,
+     "freq": "M",
+     "span_years": 17.1,
+     "age_days": 631
+    },
+    "VNM.IND.YOY_PCH_PT.M": {
+     "n": 195,
+     "first": "2009-01-01",
+     "last": "2025-03-01",
+     "last_value": 9.2604501607717,
+     "freq": "M",
+     "span_years": 16.2,
+     "age_days": 631
+    },
+    "VNM.B.IX.M": {
+     "n": 141,
+     "first": "2008-01-01",
+     "last": "2019-09-01",
+     "last_value": 76.61550058112864,
+     "freq": "M",
+     "span_years": 11.7,
+     "age_days": 2639
+    },
+    "VNM.C.IX.M": {
+     "n": 141,
+     "first": "2008-01-01",
+     "last": "2019-09-01",
+     "last_value": 98.58338589163985,
+     "freq": "M",
+     "span_years": 11.7,
+     "age_days": 2639
+    },
+    "VNM.B.POP_PCH_PT.M": {
+     "n": 140,
+     "first": "2008-02-01",
+     "last": "2019-09-01",
+     "last_value": -6.362913305306215,
+     "freq": "M",
+     "span_years": 11.6,
+     "age_days": 2639
+    },
+    "VNM.C.POP_PCH_PT.M": {
+     "n": 140,
+     "first": "2008-02-01",
+     "last": "2019-09-01",
+     "last_value": 0.8873929008567987,
+     "freq": "M",
+     "span_years": 11.6,
+     "age_days": 2639
+    },
+    "VNM.B.YOY_PCH_PT.M": {
+     "n": 129,
+     "first": "2009-01-01",
+     "last": "2019-09-01",
+     "last_value": -0.3145034474416353,
+     "freq": "M",
+     "span_years": 10.7,
+     "age_days": 2639
+    },
+    "VNM.C.YOY_PCH_PT.M": {
+     "n": 129,
+     "first": "2009-01-01",
+     "last": "2019-09-01",
+     "last_value": 15.51397939878075,
+     "freq": "M",
+     "span_years": 10.7,
+     "age_days": 2639
+    },
+    "VNM.D.IX.M": {
+     "n": 60,
+     "first": "2008-01-01",
+     "last": "2012-12-01",
+     "last_value": 126.0489538440205,
+     "freq": "M",
+     "span_years": 4.9,
+     "age_days": 5104
+    },
+    "VNM.D.POP_PCH_PT.M": {
+     "n": 59,
+     "first": "2008-02-01",
+     "last": "2012-12-01",
+     "last_value": -1.083842997599982,
+     "freq": "M",
+     "span_years": 4.8,
+     "age_days": 5104
+    },
+    "VNM.D.YOY_PCH_PT.M": {
+     "n": 48,
+     "first": "2009-01-01",
+     "last": "2012-12-01",
+     "last_value": 8.370306208552085,
+     "freq": "M",
+     "span_years": 3.9,
+     "age_days": 5104
+    },
+    "VNM.IND.IX.Q": {
+     "n": 69,
+     "first": "2008-01-01",
+     "last": "2025-01-01",
+     "last_value": 101.8325992342888,
+     "freq": "Q",
+     "span_years": 17.0,
+     "age_days": 690
+    },
+    "VNM.IND.POP_PCH_PT.Q": {
+     "n": 68,
+     "first": "2008-04-01",
+     "last": "2025-01-01",
+     "last_value": -8.425801497408308,
+     "freq": "Q",
+     "span_years": 16.8,
+     "age_days": 690
+    },
+    "VNM.IND.YOY_PCH_PT.Q": {
+     "n": 65,
+     "first": "2009-01-01",
+     "last": "2025-01-01",
+     "last_value": 8.465596434580972,
+     "freq": "Q",
+     "span_years": 16.0,
+     "age_days": 690
+    },
+    "VNM.B.IX.Q": {
+     "n": 47,
+     "first": "2008-01-01",
+     "last": "2019-07-01",
+     "last_value": 81.37859666142612,
+     "freq": "Q",
+     "span_years": 11.5,
+     "age_days": 2701
+    },
+    "VNM.C.IX.Q": {
+     "n": 47,
+     "first": "2008-01-01",
+     "last": "2019-07-01",
+     "last_value": 95.20856691854218,
+     "freq": "Q",
+     "span_years": 11.5,
+     "age_days": 2701
+    },
+    "VNM.B.POP_PCH_PT.Q": {
+     "n": 46,
+     "first": "2008-04-01",
+     "last": "2019-07-01",
+     "last_value": -9.410790672002207,
+     "freq": "Q",
+     "span_years": 11.2,
+     "age_days": 2701
+    },
+    "VNM.C.POP_PCH_PT.Q": {
+     "n": 46,
+     "first": "2008-04-01",
+     "last": "2019-07-01",
+     "last_value": 13.15328121298273,
+     "freq": "Q",
+     "span_years": 11.2,
+     "age_days": 2701
+    },
+    "VNM.B.YOY_PCH_PT.Q": {
+     "n": 43,
+     "first": "2009-01-01",
+     "last": "2019-07-01",
+     "last_value": 5.661288375648823,
+     "freq": "Q",
+     "span_years": 10.5,
+     "age_days": 2701
+    },
+    "VNM.C.YOY_PCH_PT.Q": {
+     "n": 43,
+     "first": "2009-01-01",
+     "last": "2019-07-01",
+     "last_value": 13.33048595292333,
+     "freq": "Q",
+     "span_years": 10.5,
+     "age_days": 2701
+    },
+    "VNM.D.IX.Q": {
+     "n": 28,
+     "first": "2008-01-01",
+     "last": "2016-10-01",
+     "last_value": 85.99707550159074,
+     "freq": "Q",
+     "span_years": 8.8,
+     "age_days": 3704
+    },
+    "VNM.D.POP_PCH_PT.Q": {
+     "n": 26,
+     "first": "2008-04-01",
+     "last": "2016-10-01",
+     "last_value": -5.106882551484612,
+     "freq": "Q",
+     "span_years": 8.5,
+     "age_days": 3704
+    },
+    "VNM.D.YOY_PCH_PT.Q": {
+     "n": 20,
+     "first": "2009-01-01",
+     "last": "2016-10-01",
+     "last_value": 11.75182902240913,
+     "freq": "Q",
+     "span_years": 7.7,
+     "age_days": 3704
+    },
+    "VNM.IND.IX.A": {
+     "n": 17,
+     "first": "2008-01-01",
+     "last": "2024-01-01",
+     "last_value": 104.5245953692636,
+     "freq": "A",
+     "span_years": 16.0,
+     "age_days": 1056
+    }
+   },
+   "source": "IMF SDMX PI",
+   "host": "api.imf.org",
+   "ok": true,
+   "status": 200,
+   "ms": 1018,
+   "dims": [
+    "COUNTRY",
+    "PRODUCTION_INDEX",
+    "TYPE_OF_TRANSFORMATION",
+    "FREQUENCY"
+   ],
+   "key": "VNM...",
+   "n_series": 54,
+   "n_monthly": 12,
+   "first": "2008-01-01",
+   "last": "2025-03-01",
+   "freq": "M",
+   "age_days": 631,
+   "ms_total": 1360
+  },
+  {
+   "id": "vn.trade_imf",
+   "group": "vn",
+   "series": {
+    "VNM.MG.CIF_USD.M": {
+     "n": 247,
+     "first": "2006-01-01",
+     "last": "2026-07-01",
+     "last_value": 56668000000.0,
+     "freq": "M",
+     "span_years": 20.5,
+     "age_days": 144
+    },
+    "VNM.XG.FOB_USD.M": {
+     "n": 247,
+     "first": "2006-01-01",
+     "last": "2026-07-01",
+     "last_value": 53095000000.0,
+     "freq": "M",
+     "span_years": 20.5,
+     "age_days": 144
+    },
+    "VNM.MG.CIF_POP_PCH_PT.M": {
+     "n": 82,
+     "first": "2015-02-01",
+     "last": "2021-11-01",
+     "last_value": 17.13159606627636,
+     "freq": "M",
+     "span_years": 6.7,
+     "age_days": 1847
+    },
+    "VNM.XG.FOB_POP_PCH_PT.M": {
+     "n": 82,
+     "first": "2015-02-01",
+     "last": "2021-11-01",
+     "last_value": 10.38065879256001,
+     "freq": "M",
+     "span_years": 6.7,
+     "age_days": 1847
+    },
+    "VNM.MG.CIF_YOY_PCH_PT.M": {
+     "n": 71,
+     "first": "2016-01-01",
+     "last": "2021-11-01",
+     "last_value": 24.09794859320522,
+     "freq": "M",
+     "span_years": 5.8,
+     "age_days": 1847
+    },
+    "VNM.XG.FOB_YOY_PCH_PT.M": {
+     "n": 71,
+     "first": "2016-01-01",
+     "last": "2021-11-01",
+     "last_value": 26.33498513379584,
+     "freq": "M",
+     "span_years": 5.8,
+     "age_days": 1847
+    },
+    "VNM.MG.CIF_USD.Q": {
+     "n": 86,
+     "first": "2005-01-01",
+     "last": "2026-04-01",
+     "last_value": 155553000000.0,
+     "freq": "Q",
+     "span_years": 21.2,
+     "age_days": 235
+    },
+    "VNM.XG.FOB_USD.Q": {
+     "n": 86,
+     "first": "2005-01-01",
+     "last": "2026-04-01",
+     "last_value": 143702000000.0,
+     "freq": "Q",
+     "span_years": 21.2,
+     "age_days": 235
+    },
+    "VNM.MG_VI.CIF_IX.Q": {
+     "n": 85,
+     "first": "2005-01-01",
+     "last": "2026-01-01",
+     "last_value": 526.1875155433971,
+     "freq": "Q",
+     "span_years": 21.0,
+     "age_days": 325
+    },
+    "VNM.XG_VI.FOB_IX.Q": {
+     "n": 85,
+     "first": "2005-01-01",
+     "last": "2026-01-01",
+     "last_value": 599.8146431881372,
+     "freq": "Q",
+     "span_years": 21.0,
+     "age_days": 325
+    },
+    "VNM.MG_VI.CIF_POP_PCH_PT.Q": {
+     "n": 84,
+     "first": "2005-04-01",
+     "last": "2026-01-01",
+     "last_value": -0.1981132075471833,
+     "freq": "Q",
+     "span_years": 20.8,
+     "age_days": 325
+    },
+    "VNM.XG_VI.FOB_POP_PCH_PT.Q": {
+     "n": 84,
+     "first": "2005-04-01",
+     "last": "2026-01-01",
+     "last_value": -4.341216216216223,
+     "freq": "Q",
+     "span_years": 20.8,
+     "age_days": 325
+    },
+    "VNM.MG_VI.CIF_YOY_PCH_PT.Q": {
+     "n": 81,
+     "first": "2006-01-01",
+     "last": "2026-01-01",
+     "last_value": 22.03252970354136,
+     "freq": "Q",
+     "span_years": 20.0,
+     "age_days": 325
+    },
+    "VNM.XG_VI.FOB_YOY_PCH_PT.Q": {
+     "n": 81,
+     "first": "2006-01-01",
+     "last": "2026-01-01",
+     "last_value": 16.03319332035652,
+     "freq": "Q",
+     "span_years": 20.0,
+     "age_days": 325
+    },
+    "VNM.MG.CIF_USD.A": {
+     "n": 36,
+     "first": "1990-01-01",
+     "last": "2025-01-01",
+     "last_value": 453779000000.0,
+     "freq": "A",
+     "span_years": 35.0,
+     "age_days": 690
+    },
+    "VNM.XG.FOB_USD.A": {
+     "n": 36,
+     "first": "1990-01-01",
+     "last": "2025-01-01",
+     "last_value": 472927000000.0,
+     "freq": "A",
+     "span_years": 35.0,
+     "age_days": 690
+    },
+    "VNM.MG.CIF_POP_PCH_PT.Q": {
+     "n": 26,
+     "first": "2015-04-01",
+     "last": "2021-07-01",
+     "last_value": -0.5275442398837735,
+     "freq": "Q",
+     "span_years": 6.3,
+     "age_days": 1970
+    },
+    "VNM.XG.FOB_POP_PCH_PT.Q": {
+     "n": 26,
+     "first": "2015-04-01",
+     "last": "2021-07-01",
+     "last_value": 2.63463773731112,
+     "freq": "Q",
+     "span_years": 6.3,
+     "age_days": 1970
+    },
+    "VNM.MG.CIF_YOY_PCH_PT.Q": {
+     "n": 23,
+     "first": "2016-01-01",
+     "last": "2021-07-01",
+     "last_value": 21.07521270890406,
+     "freq": "Q",
+     "span_years": 5.5,
+     "age_days": 1970
+    },
+    "VNM.XG.FOB_YOY_PCH_PT.Q": {
+     "n": 23,
+     "first": "2016-01-01",
+     "last": "2021-07-01",
+     "last_value": 2.935683216967296,
+     "freq": "Q",
+     "span_years": 5.5,
+     "age_days": 1970
+    },
+    "VNM.MG_VI.CIF_IX.A": {
+     "n": 21,
+     "first": "2005-01-01",
+     "last": "2025-01-01",
+     "last_value": 489.9900522258144,
+     "freq": "A",
+     "span_years": 20.0,
+     "age_days": 690
+    },
+    "VNM.XG_VI.FOB_IX.A": {
+     "n": 21,
+     "first": "2005-01-01",
+     "last": "2025-01-01",
+     "last_value": 592.7843241096253,
+     "freq": "A",
+     "span_years": 20.0,
+     "age_days": 690
+    },
+    "VNM.MG_VI.CIF_POP_PCH_PT.A": {
+     "n": 20,
+     "first": "2006-01-01",
+     "last": "2025-01-01",
+     "last_value": 20.5709564898109,
+     "freq": "A",
+     "span_years": 19.0,
+     "age_days": 690
+    },
+    "VNM.MG_VI.CIF_YOY_PCH_PT.A": {
+     "n": 20,
+     "first": "2006-01-01",
+     "last": "2025-01-01",
+     "last_value": 20.5709564898109,
+     "freq": "A",
+     "span_years": 19.0,
+     "age_days": 690
+    },
+    "VNM.XG_VI.FOB_POP_PCH_PT.A": {
+     "n": 20,
+     "first": "2006-01-01",
+     "last": "2025-01-01",
+     "last_value": 16.45987774743138,
+     "freq": "A",
+     "span_years": 19.0,
+     "age_days": 690
+    }
+   },
+   "source": "IMF SDMX ITG",
+   "host": "api.imf.org",
+   "ok": true,
+   "status": 200,
+   "ms": 849,
+   "dims": [
+    "COUNTRY",
+    "INDICATOR",
+    "TYPE_OF_TRANSFORMATION",
+    "FREQUENCY"
+   ],
+   "key": "VNM...",
+   "n_series": 58,
+   "n_monthly": 6,
+   "first": "2006-01-01",
+   "last": "2026-07-01",
+   "freq": "M",
+   "age_days": 144,
+   "ms_total": 1186
   },
   {
    "id": "world.policy_bis",
@@ -2165,7 +2980,7 @@
    "host": "stats.bis.org",
    "ok": true,
    "status": 200,
-   "ms": 1576,
+   "ms": 397,
    "url_used": "https://stats.bis.org/api/v2/data/dataflow/BIS/WS_CBPOL/1.0/M.US+XM+JP+CN+TH",
    "areas": {
     "CN": {
@@ -2214,7 +3029,7 @@
      "age_days": 52
     }
    },
-   "ms_total": 1589
+   "ms_total": 416
   },
   {
    "id": "world.cli_oecd",
@@ -2224,7 +3039,7 @@
    "host": "sdmx.oecd.org",
    "ok": true,
    "status": 200,
-   "ms": 126,
+   "ms": 37,
    "areas": {
     "CHN": {
      "n": 414,
@@ -2254,7 +3069,7 @@
      "age_days": 52
     }
    },
-   "ms_total": 133
+   "ms_total": 46
   },
   {
    "id": "world.ecb_dfr",
@@ -2264,7 +3079,7 @@
    "host": "data-api.ecb.europa.eu",
    "ok": true,
    "status": 200,
-   "ms": 4382,
+   "ms": 1972,
    "key": "D.U2.EUR.4F.KR.DFR.LEV",
    "n": 10188,
    "first": "1999-01-01",
@@ -2273,7 +3088,7 @@
    "freq": "D",
    "span_years": 27.9,
    "age_days": 0,
-   "ms_total": 4457
+   "ms_total": 2086
   },
   {
    "id": "cn.pmi_em",
@@ -2283,7 +3098,7 @@
    "host": "datacenter-web.eastmoney.com",
    "ok": true,
    "status": 200,
-   "ms": 2308,
+   "ms": 1359,
    "n": 226,
    "pages": 1,
    "first_on_page": "2008-01-01",
@@ -2299,7 +3114,7 @@
     "NMAKE_SAME"
    ],
    "latest_row": "{\"REPORT_DATE\": \"2026-10-01 00:00:00\", \"TIME\": \"2026年10月份\", \"MAKE_INDEX\": 49.3, \"MAKE_SAME\": 0.6122449, \"NMAKE_INDEX\": 49.7, \"NMAKE_SAME\": -0.79840319}",
-   "ms_total": 2309
+   "ms_total": 1359
   },
   {
    "id": "cn.cpi_em",
@@ -2309,7 +3124,7 @@
    "host": "datacenter-web.eastmoney.com",
    "ok": true,
    "status": 200,
-   "ms": 1120,
+   "ms": 5140,
    "n": 226,
    "pages": 1,
    "first_on_page": "2008-01-01",
@@ -2333,7 +3148,7 @@
     "RURAL_ACCUMULATE"
    ],
    "latest_row": "{\"REPORT_DATE\": \"2026-10-01 00:00:00\", \"TIME\": \"2026年10月份\", \"NATIONAL_SAME\": 0.7, \"NATIONAL_BASE\": 100.7, \"NATIONAL_SEQUENTIAL\": 0, \"NATIONAL_ACCUMULATE\": 100.9, \"CITY_SAME\": 0.7, \"CITY_BASE\": 100.7, \"CITY_SEQUENTIAL\": 0, \"CITY_ACCUMULATE\": 100.9, \"RURAL_SAME\": 0.7, \"RURAL_BASE\": 100.7}",
-   "ms_total": 1120
+   "ms_total": 5141
   },
   {
    "id": "cn.ppi_em",
@@ -2343,7 +3158,7 @@
    "host": "datacenter-web.eastmoney.com",
    "ok": true,
    "status": 200,
-   "ms": 1246,
+   "ms": 843,
    "n": 250,
    "pages": 1,
    "first_on_page": "2006-01-01",
@@ -2358,7 +3173,7 @@
     "BASE_ACCUMULATE"
    ],
    "latest_row": "{\"REPORT_DATE\": \"2026-10-01 00:00:00\", \"TIME\": \"2026年10月份\", \"BASE\": 105.7, \"BASE_SAME\": 5.7, \"BASE_ACCUMULATE\": 102.7}",
-   "ms_total": 1247
+   "ms_total": 844
   },
   {
    "id": "cn.m2_em",
@@ -2368,7 +3183,7 @@
    "host": "datacenter-web.eastmoney.com",
    "ok": true,
    "status": 200,
-   "ms": 1455,
+   "ms": 1178,
    "n": 226,
    "pages": 1,
    "first_on_page": "2008-01-01",
@@ -2389,7 +3204,7 @@
     "FREE_CASH_SEQUENTIAL"
    ],
    "latest_row": "{\"REPORT_DATE\": \"2026-10-01 00:00:00\", \"TIME\": \"2026年10月份\", \"BASIC_CURRENCY\": 3590550.61, \"BASIC_CURRENCY_SAME\": 7.1, \"BASIC_CURRENCY_SEQUENTIAL\": -0.15958364, \"CURRENCY\": 1168959.97, \"CURRENCY_SAME\": 4.4, \"CURRENCY_SEQUENTIAL\": 0.11957633, \"FREE_CASH\": 149971.13, \"FREE_CASH_SAME\": 10.7, \"FREE_CASH_SEQUENTIAL\": -0.13185798}",
-   "ms_total": 1456
+   "ms_total": 1179
   },
   {
    "id": "cn.gdp_em",
@@ -2399,7 +3214,7 @@
    "host": "datacenter-web.eastmoney.com",
    "ok": true,
    "status": 200,
-   "ms": 825,
+   "ms": 1047,
    "n": 83,
    "pages": 1,
    "first_on_page": "2006-03-01",
@@ -2419,7 +3234,7 @@
     "THIRD_SAME"
    ],
    "latest_row": "{\"REPORT_DATE\": \"2026-09-01 00:00:00\", \"TIME\": \"2026年第1-3季度\", \"DOMESTICL_PRODUCT_BASE\": 1071071.2, \"FIRST_PRODUCT_BASE\": 58993.9, \"SECOND_PRODUCT_BASE\": 383822.3, \"THIRD_PRODUCT_BASE\": 628255, \"SUM_SAME\": 4.6, \"FIRST_SAME\": 3.7, \"SECOND_SAME\": 3.8, \"THIRD_SAME\": 5.2}",
-   "ms_total": 825
+   "ms_total": 1047
   },
   {
    "id": "cn.ip_em",
@@ -2429,7 +3244,7 @@
    "host": "datacenter-web.eastmoney.com",
    "ok": true,
    "status": 200,
-   "ms": 805,
+   "ms": 793,
    "n": 207,
    "pages": 1,
    "first_on_page": "2008-02-01",
@@ -2443,7 +3258,7 @@
     "BASE_ACCUMULATE"
    ],
    "latest_row": "{\"REPORT_DATE\": \"2026-10-01 00:00:00\", \"TIME\": \"2026年10月份\", \"BASE_SAME\": 4.8, \"BASE_ACCUMULATE\": 5.3}",
-   "ms_total": 805
+   "ms_total": 794
   },
   {
    "id": "cn.retail_em",
@@ -2453,7 +3268,7 @@
    "host": "datacenter-web.eastmoney.com",
    "ok": true,
    "status": 200,
-   "ms": 1158,
+   "ms": 4482,
    "n": 211,
    "pages": 1,
    "first_on_page": "2008-01-01",
@@ -2470,7 +3285,7 @@
     "RETAIL_ACCUMULATE_SAME"
    ],
    "latest_row": "{\"REPORT_DATE\": \"2026-10-01 00:00:00\", \"TIME\": \"2026年10月份\", \"RETAIL_TOTAL\": 46462.5, \"RETAIL_TOTAL_SAME\": 0.4, \"RETAIL_TOTAL_SEQUENTIAL\": 9.49743711, \"RETAIL_TOTAL_ACCUMULATE\": 416463.8, \"RETAIL_ACCUMULATE_SAME\": 1}",
-   "ms_total": 1158
+   "ms_total": 4482
   },
   {
    "id": "cn.bond10y_em",
@@ -2480,7 +3295,7 @@
    "host": "datacenter-web.eastmoney.com",
    "ok": true,
    "status": 200,
-   "ms": 2325,
+   "ms": 1480,
    "n": 9393,
    "pages": 19,
    "first_on_page": "2025-01-02",
@@ -2503,7 +3318,32 @@
     "EMG00159635"
    ],
    "latest_row": "{\"SOLAR_DATE\": \"2026-11-20 00:00:00\", \"EMM00588704\": 1.233, \"EMM00166462\": 1.3262, \"EMM00166466\": 1.5803, \"EMM00166469\": 2.0415, \"EMM01276014\": 0.3473, \"EMM00000024\": null, \"EMG00001306\": 4.63, \"EMG00001308\": 4.71, \"EMG00001310\": 4.92, \"EMG00001312\": 5.31, \"EMG01339436\": null}",
-   "ms_total": 2326
+   "ms_total": 1481
+  },
+  {
+   "id": "cn.lpr_em",
+   "group": "cn",
+   "series": "LPR 1 năm, 5 năm (Eastmoney)",
+   "source": "Eastmoney RPTA_WEB_RATE",
+   "host": "datacenter-web.eastmoney.com",
+   "ok": true,
+   "status": 200,
+   "ms": 901,
+   "n": 1578,
+   "pages": 4,
+   "first_on_page": "2017-12-22",
+   "last": "2026-11-20",
+   "first": null,
+   "age_days": 2,
+   "fields": [
+    "TRADE_DATE",
+    "LPR1Y",
+    "LPR5Y",
+    "RATE_1",
+    "RATE_2"
+   ],
+   "latest_row": "{\"TRADE_DATE\": \"2026-11-20 00:00:00\", \"LPR1Y\": 3, \"LPR5Y\": 3.5, \"RATE_1\": 4.35, \"RATE_2\": 4.9}",
+   "ms_total": 902
   },
   {
    "id": "site.nso_vn",
@@ -2513,11 +3353,11 @@
    "host": "www.nso.gov.vn",
    "ok": true,
    "status": 200,
-   "ms": 5240,
+   "ms": 3142,
    "final_url": "https://www.nso.gov.vn/",
    "title": "General Statistics Office of Vietnam",
    "bytes": 117980,
-   "ms_total": 5241
+   "ms_total": 3143
   },
   {
    "id": "site.sbv",
@@ -2527,11 +3367,11 @@
    "host": "www.sbv.gov.vn",
    "ok": true,
    "status": 200,
-   "ms": 6125,
+   "ms": 6060,
    "final_url": "https://sbv.gov.vn/vi/trang-chu",
    "title": "Trang Chủ - Ngân hàng Nhà nước Việt Nam",
-   "bytes": 431321,
-   "ms_total": 6127
+   "bytes": 431593,
+   "ms_total": 6062
   },
   {
    "id": "site.hnx",
@@ -2541,7 +3381,7 @@
    "host": "hnx.vn",
    "ok": false,
    "error": "SSLError: HTTPSConnectionPool(host='hnx.vn', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1011)')))",
-   "ms_total": 747
+   "ms_total": 1012
   },
   {
    "id": "site.spglobal_pmi",
@@ -2551,11 +3391,11 @@
    "host": "www.pmi.spglobal.com",
    "ok": true,
    "status": 200,
-   "ms": 676,
+   "ms": 605,
    "final_url": "https://www.pmi.spglobal.com/",
    "title": "PMI, Purchasing Managers’ Index – Manufacturing, Services",
    "bytes": 45319,
-   "ms_total": 676
+   "ms_total": 605
   },
   {
    "id": "site.wgb_vn10y",
@@ -2565,11 +3405,11 @@
    "host": "www.worldgovernmentbonds.com",
    "ok": true,
    "status": 200,
-   "ms": 758,
+   "ms": 649,
    "final_url": "https://www.worldgovernmentbonds.com/bond-historical-data/vietnam/10-years/",
    "title": "Vietnam 10 Years Bond - Historical Data",
-   "bytes": 42877,
-   "ms_total": 758
+   "bytes": 42280,
+   "ms_total": 649
   },
   {
    "id": "site.eia_brent_html",
@@ -2579,11 +3419,11 @@
    "host": "www.eia.gov",
    "ok": true,
    "status": 200,
-   "ms": 76,
+   "ms": 68,
    "final_url": "https://www.eia.gov/dnav/pet/hist/RBRTEd.htm",
    "title": "Europe Brent Spot Price FOB (Dollars per Barrel)",
    "bytes": 453677,
-   "ms_total": 77
+   "ms_total": 68
   },
   {
    "id": "lib.akshare",
@@ -2592,7 +3432,7 @@
    "source": "akshare (pip)",
    "host": "lib:akshare",
    "ok": true,
-   "ms": 16705,
+   "ms": 17175,
    "lib": {
     "version": "1.20.65",
     "macro_china_pmi": {
@@ -2660,7 +3500,7 @@
     }
    },
    "error": null,
-   "ms_total": 16705
+   "ms_total": 17176
   }
  ]
 }
