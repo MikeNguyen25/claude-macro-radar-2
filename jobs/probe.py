@@ -724,6 +724,71 @@ def p_imf_sdmx() -> dict:
     return out
 
 
+IMF21 = "https://api.imf.org/external/sdmx/2.1"
+IMF_COUNTRY_DIMS = ("COUNTRY", "REF_AREA", "JURISDICTION")
+
+
+def norm_period(tp: str) -> str | None:
+    """Kỳ SDMX ('2026-M09', '2026-09', '2026-Q3', '2026', '2026-09-30') → ngày ISO đầu kỳ."""
+    tp = (tp or "").strip()
+    for pat, fn in (
+        (r"^(\d{4})-?M(\d{2})$", lambda m: f"{m[1]}-{m[2]}-01"),
+        (r"^(\d{4})-(\d{2})$", lambda m: f"{m[1]}-{m[2]}-01"),
+        (r"^(\d{4})-?Q(\d)$", lambda m: f"{m[1]}-{(int(m[2]) - 1) * 3 + 1:02d}-01"),
+        (r"^(\d{4})$", lambda m: f"{m[1]}-01-01"),
+        (r"^(\d{4}-\d{2}-\d{2})", lambda m: m[1]),
+    ):
+        m = re.match(pat, tp)
+        if m:
+            return fn(m)
+    return None
+
+
+def p_imf_country(flow: str, iso3: str = "VNM", agency: str = "IMF.STA") -> Callable[[], dict]:
+    """Đọc cấu trúc một dataflow IMF mới rồi lấy mọi chuỗi của một nước (SDMX 2.1)."""
+    def run() -> dict:
+        r0, ms0 = http_get(f"{IMF21}/dataflow/{agency}/{flow}/latest", {"references": "datastructure"},
+                           headers={"Accept": "application/xml"}, cap=60)
+        dims: list[tuple[int, str]] = []
+        for tag in re.findall(r"<(?:\w+:)?Dimension\b[^>]*>", r0.text or ""):
+            a = dict(re.findall(r'(\w+)="([^"]*)"', tag))
+            if a.get("id") and a["id"] not in [d for _, d in dims]:
+                dims.append((int(a.get("position") or len(dims) + 1), a["id"]))
+        order = [d for _, d in sorted(dims)]
+        if not order:
+            return fail(r0, ms0, f"IMF {flow}: không đọc được cấu trúc")
+        key = ".".join(iso3 if d in IMF_COUNTRY_DIMS else "" for d in order)
+        time.sleep(DEFAULT_DELAY_S)
+        r1, ms1 = http_get(f"{IMF21}/data/{agency},{flow}/{key}", {"startPeriod": "1990"},
+                           headers={"Accept": "application/vnd.sdmx.data+csv;version=1.0.0"}, cap=90)
+        series: dict[str, list] = defaultdict(list)
+        text = r1.text or ""
+        if r1.status_code == 200 and "TIME_PERIOD" in text[:5000] and "<" not in text[:5]:
+            for row in csv.DictReader(io.StringIO(text)):
+                skey = ".".join(row.get(d, "") for d in order)
+                series[skey].append((norm_period(row.get("TIME_PERIOD", "")), row.get("OBS_VALUE")))
+        else:
+            for attrs, body in re.findall(r"<(?:\w+:)?Series\b([^>]*)>(.*?)</(?:\w+:)?Series>", text, re.S):
+                a = dict(re.findall(r'(\w+)="([^"]*)"', attrs))
+                skey = ".".join(a.get(d, "") for d in order)
+                for obs in re.findall(r"<(?:\w+:)?Obs\b([^>]*)/?>", body):
+                    o = dict(re.findall(r'(\w+)="([^"]*)"', obs))
+                    series[skey].append((norm_period(o.get("TIME_PERIOD", "")), o.get("OBS_VALUE")))
+        if not series:
+            out = fail(r1, ms1, f"IMF {flow}: không có chuỗi nào cho {iso3}")
+            out.update(dims=order, key=key)
+            return out
+        summ = {k: summarize(v) for k, v in series.items()}
+        top = sorted(summ.items(), key=lambda kv: (kv[1].get("freq") != "M", -(kv[1].get("n") or 0)))[:25]
+        monthly = [s for s in summ.values() if s.get("freq") == "M"]
+        best = max(monthly or list(summ.values()), key=lambda s: s.get("n") or 0)
+        return {"ok": True, "status": r1.status_code, "ms": ms0 + ms1, "dims": order, "key": key,
+                "n_series": len(summ), "n_monthly": len(monthly), "series": dict(top),
+                "first": best.get("first"), "last": best.get("last"), "freq": best.get("freq"),
+                "age_days": best.get("age_days")}
+    return run
+
+
 def p_bis_cbpol(areas: str) -> Callable[[], dict]:
     def run() -> dict:
         urls = [f"https://stats.bis.org/api/v2/data/dataflow/BIS/WS_CBPOL/1.0/M.{areas}",
@@ -927,6 +992,16 @@ EASTMONEY_REPORTS = [
     ("cn.ip_em", "RPT_ECONOMY_INDUS_GROW", "REPORT_DATE", "Sản xuất công nghiệp TQ (Eastmoney)"),
     ("cn.retail_em", "RPT_ECONOMY_TOTAL_RETAIL", "REPORT_DATE", "Bán lẻ Trung Quốc (Eastmoney)"),
     ("cn.bond10y_em", "RPTA_WEB_TREASURYYIELD", "SOLAR_DATE", "Lợi suất TPCP Trung Quốc, Mỹ (Eastmoney)"),
+    ("cn.lpr_em", "RPTA_WEB_RATE", "TRADE_DATE", "LPR 1 năm, 5 năm (Eastmoney)"),
+]
+
+IMF_FLOWS = [
+    ("vn.cpi_imf", "CPI", "CPI Việt Nam (IMF)"),
+    ("vn.fx_imf", "ER", "Tỷ giá VND (IMF)"),
+    ("vn.rates_imf", "MFS_IR", "Lãi suất Việt Nam (IMF MFS)"),
+    ("vn.markets_imf", "MFS_FMP", "Giá thị trường tài chính Việt Nam (IMF MFS)"),
+    ("vn.ip_imf", "PI", "Chỉ số sản xuất Việt Nam (IMF)"),
+    ("vn.trade_imf", "ITG", "Thương mại hàng hóa Việt Nam (IMF)"),
 ]
 
 SITES = [
@@ -1005,6 +1080,8 @@ def build_probes() -> list[Probe]:
     ps.append(Probe("world.imf_weo", "Dự báo tăng trưởng thế giới (WEO)", "IMF DataMapper", "www.imf.org",
                     p_imf_datamapper))
     ps.append(Probe("meta.imf_sdmx", "Danh sách dataflow", "IMF SDMX 2.1 mới", "api.imf.org", p_imf_sdmx))
+    for pid, flow, desc in IMF_FLOWS:
+        ps.append(Probe(pid, desc, f"IMF SDMX {flow}", "api.imf.org", p_imf_country(flow)))
     ps.append(Probe("world.policy_bis", "Lãi suất điều hành US, EA, JP, CN, TH", "BIS WS_CBPOL", "stats.bis.org",
                     p_bis_cbpol("US+XM+JP+CN+TH")))
     ps.append(Probe("world.cli_oecd", "CLI Mỹ, Trung Quốc, G20", "OECD SDMX", "sdmx.oecd.org", p_oecd_cli))
