@@ -26,7 +26,10 @@ node mr/tools/mrc.mjs status --state mr/state --site mr/site
 
 ## 2. Đọc doc DB (slug ở trên)
 
-Dùng `db_get`; doc chưa có thì bỏ qua.
+Dùng `db_get`; doc chưa có thì bỏ qua. Công cụ có tên khác (ví dụ ArtifactData) thì dùng thao tác đọc tương đương.
+
+0. `analyses/<hôm nay>` đã có thì đây là lần chạy lại trong ngày: nhận định AI đã ghi là bất biến. Bỏ qua bước 3–7,
+   chỉ nhắn Mike một dòng "Hôm nay đã chạy xong lúc <createdAt của doc đó>" rồi dừng.
 
 1. `public/latest`, `meta/status`, `scores/ai`: ghi version của từng doc có tồn tại vào `mr-db/versions.json`,
    ví dụ `{"public/latest": 3, "meta/status": 3, "scores/ai": 3}`.
