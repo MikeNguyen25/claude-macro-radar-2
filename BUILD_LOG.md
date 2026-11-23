@@ -162,3 +162,5 @@ Kế hoạch ở `docs/PLAN.md` (bản sao trong Project). Mike cho chạy tiế
   có if_version) đều được. Phát hiện: công cụ Artifact bọc trang trong khung riêng khi đăng, làm CSS mất sau khi trang vẽ lại
   `<body>` (trang mất định dạng khoảng 22:30–22:35). Đã sửa trong `main.js`; E2E chạy thêm dạng trang bị bọc và kiểm CSS đã áp
   dụng; viewport điện thoại trong E2E hạ xuống 360 px.
+- 23/11/2026, lần chạy thật đầu tiên: cron `prices-daily` của GitHub không chạy (00:09, 00:29 UTC); tác vụ 07:40 tự chạy job lúc
+  00:41 UTC, dự báo `fb6d71c5…` xong 00:43, nhận định AI `ecfc044b…` không bị kẹp, đăng file và ghi DB lúc 00:54; tổng 15 phút, không lỗi.
