@@ -9,7 +9,7 @@
    "Không bịa số. Không có dữ kiện mới thì giữ prob_up bằng champion_prob và nói rõ."
   ]
  },
- "date": "2026-11-24",
+ "date": "2026-11-25",
  "version": "2.0.0",
  "groupsBadges": {
   "cmd_fx": {
@@ -90,12 +90,12 @@
     "growth": 0.087,
     "inflation": 0.112,
     "growth3m": 0.264,
-    "inflation3m": 0.153,
+    "inflation3m": 0.147,
     "dGrowth": -0.177,
-    "dInflation": -0.041,
+    "dInflation": -0.035,
     "quadrant": "overheat",
     "label": "Tăng trưởng nóng, lạm phát lên",
-    "policy": 0.369
+    "policy": 0.378
    },
    "cn": {
     "name": "Trung Quốc",
@@ -126,20 +126,20 @@
     "growth": -0.253,
     "inflation": 0.921,
     "growth3m": -0.125,
-    "inflation3m": 0.724,
+    "inflation3m": 0.617,
     "dGrowth": -0.128,
-    "dInflation": 0.197,
+    "dInflation": 0.304,
     "quadrant": "stagflation",
     "label": "Tăng trưởng yếu, lạm phát lên",
     "policy": 0.8
    }
   },
   "risk": {
-   "score": 0.239,
+   "score": -0.162,
    "state": "neutral",
    "label": "Trung tính",
    "parts": {
-    "risk.vix": 2.137,
+    "risk.vix": 0.934,
     "risk.nfci": -0.478,
     "risk.credit": -0.942,
     "risk.curve": -0.786
@@ -151,56 +151,56 @@
    "id": "brent",
    "name": "Dầu Brent",
    "group": "cmd_fx",
-   "price": 92.57,
-   "priceDate": "2026-11-20",
-   "chg_1d": 0.0064,
-   "chg_7d": -0.0341,
-   "chg_30d": -0.1493,
+   "price": 89.37,
+   "priceDate": "2026-11-23",
+   "chg_1d": -0.0346,
+   "chg_7d": -0.0332,
+   "chg_30d": -0.2343,
    "champion": "M1",
    "champion_prob": 0.5638,
    "base_m1": 0.5638,
    "models": {
     "M0": 0.5,
     "M1": 0.5638,
-    "M2": 0.5201,
-    "M3": 0.5325,
-    "M4": 0.5765,
-    "M5": 0.5488
+    "M2": 0.5171,
+    "M3": 0.5318,
+    "M4": 0.5687,
+    "M5": 0.5481
    },
    "band80_1m": [
-    75.7875,
-    113.7618
+    73.0237,
+    109.8436
    ],
-   "prob_tail_1m": 0.1893,
+   "prob_tail_1m": 0.1908,
    "tail_k": 0.095,
-   "prob_up_3m": 0.5631,
+   "prob_up_3m": 0.5625,
    "badge_1m": "none"
   },
   {
    "id": "btc",
    "name": "BTC",
    "group": "crypto",
-   "price": 61253.2168786616,
-   "priceDate": "2026-11-23",
-   "chg_1d": 0.0024,
-   "chg_7d": -0.0568,
-   "chg_30d": -0.241,
+   "price": 59790.6555823933,
+   "priceDate": "2026-11-24",
+   "chg_1d": -0.0239,
+   "chg_7d": -0.0788,
+   "chg_30d": -0.253,
    "champion": "M1",
    "champion_prob": 0.5474,
    "base_m1": 0.5474,
    "models": {
     "M0": 0.5,
     "M1": 0.5474,
-    "M2": 0.5389,
-    "M3": 0.5041,
-    "M4": 0.5224,
-    "M5": 0.5313
+    "M2": 0.5403,
+    "M3": 0.5031,
+    "M4": 0.5292,
+    "M5": 0.5315
    },
    "band80_1m": [
-    49458.2346,
-    75467.3188
+    48255.9109,
+    73512.5127
    ],
-   "prob_tail_1m": 0.0844,
+   "prob_tail_1m": 0.0846,
    "tail_k": 0.225,
    "prob_up_3m": 0.6215,
    "badge_1m": "none"
@@ -209,27 +209,27 @@
    "id": "doge",
    "name": "DOGE",
    "group": "crypto",
-   "price": 0.0552255492001812,
-   "priceDate": "2026-11-22",
-   "chg_1d": 0.0018,
-   "chg_7d": -0.0757,
-   "chg_30d": -0.295,
+   "price": 0.0562496127848283,
+   "priceDate": "2026-11-23",
+   "chg_1d": 0.0185,
+   "chg_7d": -0.0436,
+   "chg_30d": -0.2742,
    "champion": "M1",
    "champion_prob": 0.4704,
    "base_m1": 0.4704,
    "models": {
     "M0": 0.5,
     "M1": 0.4704,
-    "M2": 0.5492,
-    "M3": 0.4854,
-    "M4": 0.5301,
-    "M5": 0.5226
+    "M2": 0.5485,
+    "M3": 0.4844,
+    "M4": 0.5351,
+    "M5": 0.5227
    },
    "band80_1m": [
-    0.0398,
-    0.0738
+    0.0407,
+    0.0745
    ],
-   "prob_tail_1m": 0.1806,
+   "prob_tail_1m": 0.179,
    "tail_k": 0.225,
    "prob_up_3m": 0.4469,
    "badge_1m": "none"
@@ -238,27 +238,27 @@
    "id": "eth",
    "name": "ETH",
    "group": "crypto",
-   "price": 1709.89690914085,
-   "priceDate": "2026-11-23",
-   "chg_1d": -0.0059,
-   "chg_7d": -0.0603,
-   "chg_30d": -0.273,
+   "price": 1677.9682168498,
+   "priceDate": "2026-11-24",
+   "chg_1d": -0.0187,
+   "chg_7d": -0.0796,
+   "chg_30d": -0.2785,
    "champion": "M1",
    "champion_prob": 0.5535,
    "base_m1": 0.5535,
    "models": {
     "M0": 0.5,
     "M1": 0.5535,
-    "M2": 0.5346,
-    "M3": 0.5055,
-    "M4": 0.5202,
-    "M5": 0.5319
+    "M2": 0.5348,
+    "M3": 0.5046,
+    "M4": 0.5269,
+    "M5": 0.532
    },
    "band80_1m": [
-    1265.1161,
-    2274.2169
+    1248.4006,
+    2215.4182
    ],
-   "prob_tail_1m": 0.1554,
+   "prob_tail_1m": 0.1535,
    "tail_k": 0.225,
    "prob_up_3m": 0.5869,
    "badge_1m": "none"
@@ -267,29 +267,29 @@
    "id": "gold",
    "name": "Vàng",
    "group": "cmd_fx",
-   "price": 3634.07,
-   "priceDate": "2026-11-23",
-   "chg_1d": 0.0288,
-   "chg_7d": -0.0574,
-   "chg_30d": -0.0903,
+   "price": 3555.6055,
+   "priceDate": "2026-11-24",
+   "chg_1d": -0.0216,
+   "chg_7d": -0.0761,
+   "chg_30d": -0.1101,
    "champion": "M1",
    "champion_prob": 0.5548,
    "base_m1": 0.5548,
    "models": {
     "M0": 0.5,
     "M1": 0.5548,
-    "M2": 0.5979,
-    "M3": 0.544,
-    "M4": 0.5666,
-    "M5": 0.5499
+    "M2": 0.6005,
+    "M3": 0.5442,
+    "M4": 0.5611,
+    "M5": 0.5497
    },
    "band80_1m": [
-    3247.944,
-    4133.8993
+    3168.4316,
+    4051.4373
    ],
-   "prob_tail_1m": 0.1955,
+   "prob_tail_1m": 0.1985,
    "tail_k": 0.045,
-   "prob_up_3m": 0.5968,
+   "prob_up_3m": 0.5969,
    "badge_1m": "none"
   },
   {
@@ -307,16 +307,16 @@
    "models": {
     "M0": 0.5,
     "M1": 0.6018,
-    "M2": 0.6385,
-    "M3": 0.6218,
-    "M4": 0.6372,
-    "M5": 0.6571
+    "M2": 0.6381,
+    "M3": 0.6211,
+    "M4": 0.6375,
+    "M5": 0.657
    },
    "band80_1m": [
-    21860.6663,
-    26457.5625
+    21864.2501,
+    26451.7095
    ],
-   "prob_tail_1m": 0.161,
+   "prob_tail_1m": 0.1609,
    "tail_k": 0.06,
    "prob_up_3m": 0.6709,
    "badge_1m": "none"
@@ -325,27 +325,27 @@
    "id": "set",
    "name": "SET (Thái Lan)",
    "group": "sea",
-   "price": 1454.49,
-   "priceDate": "2026-11-23",
-   "chg_1d": 0.0008,
-   "chg_7d": -0.03,
-   "chg_30d": -0.0692,
+   "price": 1451.65,
+   "priceDate": "2026-11-24",
+   "chg_1d": -0.002,
+   "chg_7d": -0.0156,
+   "chg_30d": -0.071,
    "champion": "M1",
    "champion_prob": 0.558,
    "base_m1": 0.558,
    "models": {
     "M0": 0.5,
     "M1": 0.558,
-    "M2": 0.5632,
+    "M2": 0.5643,
     "M3": 0.5657,
-    "M4": 0.5664,
+    "M4": 0.5648,
     "M5": 0.5681
    },
    "band80_1m": [
-    1368.4765,
-    1546.5464
+    1368.1591,
+    1540.7149
    ],
-   "prob_tail_1m": 0.1443,
+   "prob_tail_1m": 0.1413,
    "tail_k": 0.05,
    "prob_up_3m": 0.5622,
    "badge_1m": "none"
@@ -354,27 +354,27 @@
    "id": "sol",
    "name": "SOL",
    "group": "crypto",
-   "price": 71.8940055826183,
-   "priceDate": "2026-11-23",
-   "chg_1d": 0.0196,
-   "chg_7d": 0.0071,
-   "chg_30d": -0.2957,
+   "price": 69.7257480538206,
+   "priceDate": "2026-11-24",
+   "chg_1d": -0.0302,
+   "chg_7d": -0.0708,
+   "chg_30d": -0.3106,
    "champion": "M1",
    "champion_prob": 0.529,
    "base_m1": 0.529,
    "models": {
     "M0": 0.5,
     "M1": 0.529,
-    "M2": 0.5391,
-    "M3": 0.4996,
-    "M4": 0.5221,
-    "M5": 0.5292
+    "M2": 0.5393,
+    "M3": 0.4986,
+    "M4": 0.5288,
+    "M5": 0.5293
    },
    "band80_1m": [
-    52.9975,
-    94.0852
+    51.4704,
+    90.9935
    ],
-   "prob_tail_1m": 0.1601,
+   "prob_tail_1m": 0.1597,
    "tail_k": 0.225,
    "prob_up_3m": 0.5602,
    "badge_1m": "none"
@@ -383,27 +383,27 @@
    "id": "spx",
    "name": "S&P 500",
    "group": "us_eq",
-   "price": 7237.17,
-   "priceDate": "2026-11-23",
-   "chg_1d": 0.0473,
-   "chg_7d": -0.0242,
-   "chg_30d": -0.0507,
+   "price": 7201.09,
+   "priceDate": "2026-11-24",
+   "chg_1d": -0.005,
+   "chg_7d": -0.019,
+   "chg_30d": -0.0554,
    "champion": "M1",
    "champion_prob": 0.6318,
    "base_m1": 0.6318,
    "models": {
     "M0": 0.5,
     "M1": 0.6318,
-    "M2": 0.648,
-    "M3": 0.6309,
-    "M4": 0.6484,
-    "M5": 0.671
+    "M2": 0.6478,
+    "M3": 0.6302,
+    "M4": 0.6488,
+    "M5": 0.6709
    },
    "band80_1m": [
-    6555.6281,
-    8093.0155
+    6541.8876,
+    8027.9825
    ],
-   "prob_tail_1m": 0.149,
+   "prob_tail_1m": 0.146,
    "tail_k": 0.06,
    "prob_up_3m": 0.677,
    "badge_1m": "none"
@@ -412,27 +412,27 @@
    "id": "sti",
    "name": "STI (Singapore)",
    "group": "sea",
-   "price": 4953.81,
-   "priceDate": "2026-11-23",
-   "chg_1d": -0.0043,
-   "chg_7d": -0.0443,
-   "chg_30d": -0.0864,
+   "price": 4958.87,
+   "priceDate": "2026-11-24",
+   "chg_1d": 0.001,
+   "chg_7d": -0.0294,
+   "chg_30d": -0.0854,
    "champion": "M1",
    "champion_prob": 0.581,
    "base_m1": 0.581,
    "models": {
     "M0": 0.5,
     "M1": 0.581,
-    "M2": 0.5681,
+    "M2": 0.5679,
     "M3": 0.5679,
-    "M4": 0.568,
-    "M5": 0.5736
+    "M4": 0.5664,
+    "M5": 0.5735
    },
    "band80_1m": [
-    4646.6477,
-    5348.4524
+    4661.6421,
+    5343.0067
    ],
-   "prob_tail_1m": 0.1242,
+   "prob_tail_1m": 0.1207,
    "tail_k": 0.05,
    "prob_up_3m": 0.6194,
    "badge_1m": "none"
@@ -441,27 +441,27 @@
    "id": "trx",
    "name": "TRX",
    "group": "crypto",
-   "price": 0.305187864965871,
-   "priceDate": "2026-11-22",
-   "chg_1d": 0.0013,
-   "chg_7d": 0.0001,
-   "chg_30d": -0.0737,
+   "price": 0.307797459586979,
+   "priceDate": "2026-11-24",
+   "chg_1d": -0.0052,
+   "chg_7d": -0.0003,
+   "chg_30d": -0.0673,
    "champion": "M1",
    "champion_prob": 0.5668,
    "base_m1": 0.5668,
    "models": {
     "M0": 0.5,
     "M1": 0.5668,
-    "M2": 0.5342,
-    "M3": 0.5088,
-    "M4": 0.5149,
-    "M5": 0.5334
+    "M2": 0.5332,
+    "M3": 0.5079,
+    "M4": 0.5217,
+    "M5": 0.5335
    },
    "band80_1m": [
-    0.2663,
-    0.3584
+    0.2701,
+    0.3594
    ],
-   "prob_tail_1m": 0.0575,
+   "prob_tail_1m": 0.0557,
    "tail_k": 0.225,
    "prob_up_3m": 0.6319,
    "badge_1m": "none"
@@ -471,9 +471,9 @@
    "name": "USD/VND",
    "group": "cmd_fx",
    "price": 25775,
-   "priceDate": "2026-11-23",
-   "chg_1d": -0.0003,
-   "chg_7d": 0.0009,
+   "priceDate": "2026-11-24",
+   "chg_1d": 0,
+   "chg_7d": 0.0027,
    "chg_30d": -0.0025,
    "champion": "M1",
    "champion_prob": 0.6199,
@@ -482,17 +482,17 @@
     "M0": 0.5,
     "M1": 0.6199,
     "M2": 0.5098,
-    "M3": 0.5679,
-    "M4": 0.5905,
-    "M5": 0.5711
+    "M3": 0.5687,
+    "M4": 0.5732,
+    "M5": 0.5701
    },
    "band80_1m": [
-    25527.2084,
-    26067.087
+    25535.1982,
+    26058.6262
    ],
-   "prob_tail_1m": 0.1562,
+   "prob_tail_1m": 0.153,
    "tail_k": 0.005,
-   "prob_up_3m": 0.6127,
+   "prob_up_3m": 0.6123,
    "badge_1m": "none"
   },
   {
@@ -500,10 +500,10 @@
    "name": "Lợi suất 10 năm Mỹ",
    "group": "cmd_fx",
    "price": 4.92,
-   "priceDate": "2026-11-20",
-   "chg_1d": -0.12,
-   "chg_7d": -0.23,
-   "chg_30d": -0.21,
+   "priceDate": "2026-11-23",
+   "chg_1d": 0,
+   "chg_7d": -0.2,
+   "chg_30d": -0.08,
    "champion": "M1",
    "champion_prob": 0.514,
    "base_m1": 0.514,
@@ -511,15 +511,15 @@
     "M0": 0.5,
     "M1": 0.514,
     "M2": 0.5223,
-    "M3": 0.5567,
-    "M4": 0.5145,
-    "M5": 0.529
+    "M3": 0.5568,
+    "M4": 0.53,
+    "M5": 0.53
    },
    "band80_1m": [
-    4.5397,
-    5.3003
+    4.5513,
+    5.2887
    ],
-   "prob_tail_1m": 0.1334,
+   "prob_tail_1m": 0.1301,
    "tail_k": 0.3,
    "prob_up_3m": 0.544,
    "badge_1m": "none"
@@ -539,16 +539,16 @@
    "models": {
     "M0": 0.5,
     "M1": 0.5361,
-    "M2": 0.5628,
-    "M3": 0.5589,
-    "M4": 0.5378,
-    "M5": 0.5791
+    "M2": 0.5699,
+    "M3": 0.5584,
+    "M4": 0.5544,
+    "M5": 0.5809
    },
    "band80_1m": [
-    1585.0149,
-    1839.3741
+    1585.215,
+    1839.0516
    ],
-   "prob_tail_1m": 0.1146,
+   "prob_tail_1m": 0.1144,
    "tail_k": 0.065,
    "prob_up_3m": 0.564,
    "badge_1m": "none"
@@ -624,11 +624,11 @@
    "id": "us_ff",
    "name": "Lãi suất Fed (hiệu dụng)",
    "unit": "%",
-   "period": "2026-11-20",
+   "period": "2026-11-23",
    "value": 3.88,
    "transformed": 0.26,
    "transform": "chg6",
-   "published": "2026-11-21",
+   "published": "2026-11-24",
    "usable": true,
    "source": "FRED DFF",
    "url": "https://fred.stlouisfed.org/series/DFF"
@@ -637,11 +637,11 @@
    "id": "us_2y",
    "name": "Lợi suất 2 năm Mỹ",
    "unit": "%",
-   "period": "2026-11-20",
+   "period": "2026-11-23",
    "value": 4.63,
-   "transformed": 0.63,
+   "transformed": 0.65,
    "transform": "chg6",
-   "published": "2026-11-21",
+   "published": "2026-11-24",
    "usable": true,
    "source": "FRED DGS2",
    "url": "https://fred.stlouisfed.org/series/DGS2"
@@ -754,11 +754,11 @@
    "id": "cn_10y",
    "name": "Lợi suất TPCP TQ 10 năm",
    "unit": "%",
-   "period": "2026-11-23",
-   "value": 1.5861,
-   "transformed": 1.5861,
+   "period": "2026-11-24",
+   "value": 1.5853,
+   "transformed": 1.5853,
    "transform": "level",
-   "published": "2026-11-24",
+   "published": "2026-11-25",
    "usable": true,
    "source": "Eastmoney RPTA_WEB_TREASURYYIELD.EMM00166466",
    "url": "https://data.eastmoney.com/cjsj/"
@@ -819,11 +819,11 @@
    "id": "w_ecb",
    "name": "Lãi suất tiền gửi ECB",
    "unit": "%",
-   "period": "2026-11-23",
+   "period": "2026-11-24",
    "value": 2.5,
    "transformed": 0.5,
    "transform": "chg6",
-   "published": "2026-11-24",
+   "published": "2026-11-25",
    "usable": true,
    "source": "ECB lãi suất tiền gửi (DFR)",
    "url": "https://data.ecb.europa.eu/"
@@ -843,7 +843,7 @@
   }
  ],
  "qaIssues": [
-  "vn_ip: số cũ 632 ngày"
+  "vn_ip: số cũ 633 ngày"
  ],
  "notes": []
 }
