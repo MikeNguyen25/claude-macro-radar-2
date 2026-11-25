@@ -50,9 +50,17 @@ jobs:
       - name: Dự báo hằng ngày
         id: forecast
         # lần 07:09 và 07:29 chỉ dự báo khi cập nhật giá thành công; lần 07:52 và chạy tay thì dự báo với số đang có
+        # Lịch GitHub ở repo này trễ 7–10 giờ (23–24/11/2026). Lần chạy theo lịch nào trễ sang 00:00–07:00 giờ Việt Nam
+        # của ngày sau thì không dự báo, để dự báo mỗi ngày luôn dùng giá đóng cửa của buổi sáng.
         if: always() && (steps.update.outcome == 'success' || github.event.schedule == '52 0 * * *' || github.event_name == 'workflow_dispatch')
         timeout-minutes: 15
-        run: node tools/mrc.mjs daily --data data --state state --site site | tee /tmp/daily.json
+        run: |
+          h=$(TZ=Asia/Ho_Chi_Minh date +%-H)
+          if [ "${{ github.event_name }}" = schedule ] && [ "$h" -lt 7 ]; then
+            echo '{"ok": true, "skipped": "lịch GitHub trễ sang trước 07:00 giờ Việt Nam; dự báo để cho lần chạy buổi sáng"}' | tee /tmp/daily.json
+            exit 0
+          fi
+          node tools/mrc.mjs daily --data data --state state --site site | tee /tmp/daily.json
       - name: Ghi dự báo vào repo
         if: always() && steps.forecast.outcome == 'success'
         run: |

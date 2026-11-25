@@ -164,3 +164,12 @@ Kế hoạch ở `docs/PLAN.md` (bản sao trong Project). Mike cho chạy tiế
   dụng; viewport điện thoại trong E2E hạ xuống 360 px.
 - 23/11/2026, lần chạy thật đầu tiên: cron `prices-daily` của GitHub không chạy (00:09, 00:29 UTC); tác vụ 07:40 tự chạy job lúc
   00:41 UTC, dự báo `fb6d71c5…` xong 00:43, nhận định AI `ecfc044b…` không bị kẹp, đăng file và ghi DB lúc 00:54; tổng 15 phút, không lỗi.
+
+## G7 Phát hành 2.0.0 (25/11/2026), xong
+
+- Ba sáng liền 23–25/11 không lỗi: sổ dự báo `fb6d71c5…`, `1db52d2d…`, `a89502ba…` (28 mục mỗi ngày, hash kiểm lại khớp),
+  nhận định AI có hash, file trên trang và 4 doc DB đủ cả ba ngày; không lần nào runner phải kẹp xác suất AI.
+- Cron `prices-daily` của GitHub vẫn trễ 7–10 giờ (23/11: 07:24–08:19 UTC; 24/11: 09:44–10:28 UTC). Cả ba sáng, dự báo đều do
+  tác vụ 07:40 tự chạy job (00:41–00:43 UTC). Thêm chặn trong `prices-daily`: lần chạy theo lịch nào trễ sang 00:00–07:00 giờ
+  Việt Nam thì không dự báo, để dự báo mỗi ngày luôn dùng giá của buổi sáng.
+- Version vẫn là 2.0.0. App là công cụ tham khảo, không khuyến nghị mua bán.
